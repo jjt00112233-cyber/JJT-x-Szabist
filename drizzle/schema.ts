@@ -46,6 +46,10 @@ export const campaignConfig = pgTable("campaign_config", {
   wallet2_account_number: text("wallet2_account_number").default(""),
   wallet2_account_title: text("wallet2_account_title").default(""),
   payment_display_mode: text("payment_display_mode").notNull().default("both"),
+  facebook_url: text("facebook_url").notNull().default("https://www.facebook.com/thejuniorjinnahtrust"),
+  instagram_url: text("instagram_url").notNull().default("https://www.instagram.com/jinnahjuniortrust/"),
+  linkedin_url: text("linkedin_url").notNull().default("https://www.linkedin.com/company/54089173/"),
+  whatsapp_url: text("whatsapp_url").notNull().default("https://wa.link/tue7xa"),
   payment_instructions: text("payment_instructions").notNull().default("Please use your name as the transfer reference and upload your receipt screenshot below."),
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

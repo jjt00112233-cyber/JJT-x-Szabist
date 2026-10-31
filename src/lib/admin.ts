@@ -310,6 +310,10 @@ export const getAdminData = createServerFn({ method: "POST" })
           wallet2AccountNumber: cfg.wallet2_account_number || "",
           wallet2AccountTitle: cfg.wallet2_account_title || "",
           paymentDisplayMode: (cfg.payment_display_mode as any) || SITE.paymentDisplayMode,
+          facebookUrl: cfg.facebook_url || SITE.facebookUrl,
+          instagramUrl: cfg.instagram_url || SITE.instagramUrl,
+          linkedinUrl: cfg.linkedin_url || SITE.linkedinUrl,
+          whatsappUrl: cfg.whatsapp_url || SITE.whatsappUrl,
           paymentInstructions: cfg.payment_instructions || SITE.paymentInstructions,
           updatedAt: cfg.updated_at ? new Date(cfg.updated_at).toISOString() : undefined,
         }
@@ -334,6 +338,10 @@ export const getAdminData = createServerFn({ method: "POST" })
           wallet2AccountNumber: SITE.wallet2AccountNumber,
           wallet2AccountTitle: SITE.wallet2AccountTitle,
           paymentDisplayMode: SITE.paymentDisplayMode,
+          facebookUrl: SITE.facebookUrl,
+          instagramUrl: SITE.instagramUrl,
+          linkedinUrl: SITE.linkedinUrl,
+          whatsappUrl: SITE.whatsappUrl,
           paymentInstructions: SITE.paymentInstructions,
         };
 
@@ -432,6 +440,10 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
       wallet2_account_number?: string;
       wallet2_account_title?: string;
       payment_display_mode?: string;
+      facebook_url?: string;
+      instagram_url?: string;
+      linkedin_url?: string;
+      whatsapp_url?: string;
       payment_instructions?: string;
     }) => data
   )
@@ -463,6 +475,10 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
     const cleanPaymentDisplayMode = (data.payment_display_mode || "").trim() === "wallet_only" || (data.payment_display_mode || "").trim() === "bank_only"
       ? (data.payment_display_mode || "").trim()
       : "both";
+    const cleanFacebookUrl = (data.facebook_url || "").trim() || SITE.facebookUrl;
+    const cleanInstagramUrl = (data.instagram_url || "").trim() || SITE.instagramUrl;
+    const cleanLinkedinUrl = (data.linkedin_url || "").trim() || SITE.linkedinUrl;
+    const cleanWhatsappUrl = (data.whatsapp_url || "").trim() || SITE.whatsappUrl;
     const cleanPaymentInstructions = (data.payment_instructions || "").trim() || SITE.paymentInstructions;
 
     await db
@@ -489,6 +505,10 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         wallet2_account_number: cleanWallet2AccountNumber,
         wallet2_account_title: cleanWallet2AccountTitle,
         payment_display_mode: cleanPaymentDisplayMode,
+        facebook_url: cleanFacebookUrl,
+        instagram_url: cleanInstagramUrl,
+        linkedin_url: cleanLinkedinUrl,
+        whatsapp_url: cleanWhatsappUrl,
         payment_instructions: cleanPaymentInstructions,
         updated_at: new Date(),
       })
@@ -515,6 +535,10 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
           wallet2_account_number: cleanWallet2AccountNumber,
           wallet2_account_title: cleanWallet2AccountTitle,
           payment_display_mode: cleanPaymentDisplayMode,
+          facebook_url: cleanFacebookUrl,
+          instagram_url: cleanInstagramUrl,
+          linkedin_url: cleanLinkedinUrl,
+          whatsapp_url: cleanWhatsappUrl,
           payment_instructions: cleanPaymentInstructions,
           updated_at: new Date(),
         },
@@ -543,6 +567,10 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         wallet2AccountNumber: cleanWallet2AccountNumber,
         wallet2AccountTitle: cleanWallet2AccountTitle,
         paymentDisplayMode: cleanPaymentDisplayMode as "both" | "wallet_only" | "bank_only",
+        facebookUrl: cleanFacebookUrl,
+        instagramUrl: cleanInstagramUrl,
+        linkedinUrl: cleanLinkedinUrl,
+        whatsappUrl: cleanWhatsappUrl,
         paymentInstructions: cleanPaymentInstructions,
       },
     };

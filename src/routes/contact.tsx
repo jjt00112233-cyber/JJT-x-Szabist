@@ -16,7 +16,7 @@ import {
 import { PageHero } from "@/components/PageHero";
 import { submitDonationRequest } from "@/lib/donations";
 import { Button } from "@/components/ui/button";
-import { useCampaignConfig, formatWhatsAppUrl, gmailComposeUrl } from "@/lib/site";
+import { useCampaignConfig, formatWhatsAppUrl, getWhatsAppUrl, gmailComposeUrl, SITE } from "@/lib/site";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -194,7 +194,7 @@ function ContactPage() {
                   <p className="text-xs uppercase font-semibold text-muted-foreground">Phone & WhatsApp</p>
                   <div className="space-y-1.5 pt-1">
                     <a
-                      href={formatWhatsAppUrl(config.donationPhone)}
+                      href={getWhatsAppUrl(config.whatsappUrl, config.donationPhone)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between text-sm font-semibold text-foreground hover:text-primary transition"
@@ -264,7 +264,7 @@ function ContactPage() {
               <p className="text-xs uppercase font-semibold text-muted-foreground">Connect with Us</p>
               <div className="flex flex-wrap gap-2.5">
                 <a
-                  href="https://www.facebook.com/thejuniorjinnahtrust"
+                  href={config.facebookUrl || SITE.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl border bg-muted/40 px-3.5 py-2 text-xs font-semibold text-foreground hover:border-primary hover:bg-primary/10 hover:text-primary transition"
@@ -273,7 +273,7 @@ function ContactPage() {
                   <span>Facebook</span>
                 </a>
                 <a
-                  href="https://wa.link/tue7xa"
+                  href={getWhatsAppUrl(config.whatsappUrl, config.donationPhone)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl border bg-muted/40 px-3.5 py-2 text-xs font-semibold text-foreground hover:border-primary hover:bg-primary/10 hover:text-primary transition"
@@ -282,7 +282,7 @@ function ContactPage() {
                   <span>WhatsApp</span>
                 </a>
                 <a
-                  href="https://www.instagram.com/jinnahjuniortrust/"
+                  href={config.instagramUrl || SITE.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl border bg-muted/40 px-3.5 py-2 text-xs font-semibold text-foreground hover:border-primary hover:bg-primary/10 hover:text-primary transition"
@@ -291,7 +291,7 @@ function ContactPage() {
                   <span>Instagram</span>
                 </a>
                 <a
-                  href="https://www.linkedin.com/company/54089173/"
+                  href={config.linkedinUrl || SITE.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl border bg-muted/40 px-3.5 py-2 text-xs font-semibold text-foreground hover:border-primary hover:bg-primary/10 hover:text-primary transition"
@@ -322,7 +322,7 @@ function ContactPage() {
                       Send Another Message
                     </Button>
                     <Button asChild className="bg-primary text-primary-foreground">
-                      <a href={formatWhatsAppUrl(config.donationPhone)} target="_blank" rel="noopener noreferrer">
+                      <a href={getWhatsAppUrl(config.whatsappUrl, config.donationPhone)} target="_blank" rel="noopener noreferrer">
                         Chat on WhatsApp
                       </a>
                     </Button>

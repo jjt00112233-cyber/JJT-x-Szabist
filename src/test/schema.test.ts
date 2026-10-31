@@ -55,6 +55,10 @@ describe("Drizzle Schema", () => {
     expect(columns).toHaveProperty("wallet2_account_number");
     expect(columns).toHaveProperty("wallet2_account_title");
     expect(columns).toHaveProperty("payment_display_mode");
+    expect(columns).toHaveProperty("facebook_url");
+    expect(columns).toHaveProperty("instagram_url");
+    expect(columns).toHaveProperty("linkedin_url");
+    expect(columns).toHaveProperty("whatsapp_url");
     expect(columns).toHaveProperty("payment_instructions");
   });
 });

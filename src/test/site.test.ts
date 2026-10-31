@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SUGGESTED_CONTRIBUTIONS, SITE, gmailComposeUrl, formatWhatsAppUrl } from "@/lib/site";
+import { SUGGESTED_CONTRIBUTIONS, SITE, gmailComposeUrl, formatWhatsAppUrl, getWhatsAppUrl } from "@/lib/site";
 
 describe("Suggested contributions", () => {
   it("starts suggestions at Rs 20,000 with none below that amount", () => {
@@ -29,10 +29,19 @@ describe("Contact email and WhatsApp links", () => {
     expect(formatWhatsAppUrl("+92-321-9519360")).toBe("https://wa.me/923219519360");
   });
 
-  it("has default bank details defined in shared SITE module", () => {
+  it("prioritizes custom WhatsApp URL when provided", () => {
+    expect(getWhatsAppUrl("https://wa.link/custom123")).toBe("https://wa.link/custom123");
+    expect(getWhatsAppUrl("", "03219519360")).toBe("https://wa.me/923219519360");
+  });
+
+  it("has default bank details and social links defined in shared SITE module", () => {
     expect(SITE.bankName).toBeDefined();
     expect(SITE.bankAccountNumber).toBeDefined();
     expect(SITE.bankIban).toBeDefined();
     expect(SITE.easypaisaNumber).toBeDefined();
+    expect(SITE.facebookUrl).toBeDefined();
+    expect(SITE.instagramUrl).toBeDefined();
+    expect(SITE.linkedinUrl).toBeDefined();
+    expect(SITE.whatsappUrl).toBeDefined();
   });
 });

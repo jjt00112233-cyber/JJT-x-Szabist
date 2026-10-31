@@ -26,6 +26,10 @@ export type CampaignConfig = {
   wallet2AccountNumber?: string;
   wallet2AccountTitle?: string;
   paymentDisplayMode: "both" | "wallet_only" | "bank_only";
+  facebookUrl: string;
+  instagramUrl: string;
+  linkedinUrl: string;
+  whatsappUrl: string;
   paymentInstructions: string;
   updatedAt?: string;
 };
@@ -62,6 +66,10 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
           wallet2AccountNumber: row.wallet2_account_number || "",
           wallet2AccountTitle: row.wallet2_account_title || "",
           paymentDisplayMode: (row.payment_display_mode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode,
+          facebookUrl: row.facebook_url || SITE.facebookUrl,
+          instagramUrl: row.instagram_url || SITE.instagramUrl,
+          linkedinUrl: row.linkedin_url || SITE.linkedinUrl,
+          whatsappUrl: row.whatsapp_url || SITE.whatsappUrl,
           paymentInstructions: row.payment_instructions || SITE.paymentInstructions,
           updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
         };
@@ -91,6 +99,10 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
       wallet2AccountNumber: SITE.wallet2AccountNumber,
       wallet2AccountTitle: SITE.wallet2AccountTitle,
       paymentDisplayMode: SITE.paymentDisplayMode,
+      facebookUrl: SITE.facebookUrl,
+      instagramUrl: SITE.instagramUrl,
+      linkedinUrl: SITE.linkedinUrl,
+      whatsappUrl: SITE.whatsappUrl,
       paymentInstructions: SITE.paymentInstructions,
     };
   }
@@ -126,6 +138,10 @@ export function useCampaignConfig(): CampaignConfig {
       wallet2AccountNumber: SITE.wallet2AccountNumber,
       wallet2AccountTitle: SITE.wallet2AccountTitle,
       paymentDisplayMode: SITE.paymentDisplayMode,
+      facebookUrl: SITE.facebookUrl,
+      instagramUrl: SITE.instagramUrl,
+      linkedinUrl: SITE.linkedinUrl,
+      whatsappUrl: SITE.whatsappUrl,
       paymentInstructions: SITE.paymentInstructions,
     }
   );

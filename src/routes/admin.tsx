@@ -34,6 +34,7 @@ import {
   Save,
   RotateCcw,
   Wallet,
+  Share2,
 } from "lucide-react";
 import {
   adminLogin,
@@ -137,6 +138,10 @@ function AdminPage() {
   const [editPaymentDisplayMode, setEditPaymentDisplayMode] = useState<"both" | "wallet_only" | "bank_only">(
     (publicConfig.paymentDisplayMode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode
   );
+  const [editFacebookUrl, setEditFacebookUrl] = useState(publicConfig.facebookUrl || SITE.facebookUrl);
+  const [editInstagramUrl, setEditInstagramUrl] = useState(publicConfig.instagramUrl || SITE.instagramUrl);
+  const [editLinkedinUrl, setEditLinkedinUrl] = useState(publicConfig.linkedinUrl || SITE.linkedinUrl);
+  const [editWhatsappUrl, setEditWhatsappUrl] = useState(publicConfig.whatsappUrl || SITE.whatsappUrl);
   const [editPaymentInstructions, setEditPaymentInstructions] = useState(publicConfig.paymentInstructions || SITE.paymentInstructions);
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -193,6 +198,10 @@ function AdminPage() {
       setEditPaymentDisplayMode(
         (publicConfig.paymentDisplayMode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode
       );
+      setEditFacebookUrl(publicConfig.facebookUrl || SITE.facebookUrl);
+      setEditInstagramUrl(publicConfig.instagramUrl || SITE.instagramUrl);
+      setEditLinkedinUrl(publicConfig.linkedinUrl || SITE.linkedinUrl);
+      setEditWhatsappUrl(publicConfig.whatsappUrl || SITE.whatsappUrl);
       setEditPaymentInstructions(publicConfig.paymentInstructions || SITE.paymentInstructions);
     }
   }, [
@@ -216,6 +225,10 @@ function AdminPage() {
     publicConfig.wallet2AccountNumber,
     publicConfig.wallet2AccountTitle,
     publicConfig.paymentDisplayMode,
+    publicConfig.facebookUrl,
+    publicConfig.instagramUrl,
+    publicConfig.linkedinUrl,
+    publicConfig.whatsappUrl,
     publicConfig.paymentInstructions,
   ]);
 
@@ -326,6 +339,10 @@ function AdminPage() {
         setEditPaymentDisplayMode(
           (res.campaignConfig.paymentDisplayMode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode
         );
+        setEditFacebookUrl(res.campaignConfig.facebookUrl || SITE.facebookUrl);
+        setEditInstagramUrl(res.campaignConfig.instagramUrl || SITE.instagramUrl);
+        setEditLinkedinUrl(res.campaignConfig.linkedinUrl || SITE.linkedinUrl);
+        setEditWhatsappUrl(res.campaignConfig.whatsappUrl || SITE.whatsappUrl);
         setEditPaymentInstructions(res.campaignConfig.paymentInstructions || SITE.paymentInstructions);
       }
       if (res.adminEmail) {
@@ -593,6 +610,10 @@ function AdminPage() {
           wallet2_account_number: showSecondaryWallet ? editWallet2AccountNumber.trim() : "",
           wallet2_account_title: showSecondaryWallet ? editWallet2AccountTitle.trim() : "",
           payment_display_mode: editPaymentDisplayMode,
+          facebook_url: editFacebookUrl.trim(),
+          instagram_url: editInstagramUrl.trim(),
+          linkedin_url: editLinkedinUrl.trim(),
+          whatsapp_url: editWhatsappUrl.trim(),
           payment_instructions: editPaymentInstructions.trim(),
         },
       });
@@ -645,6 +666,10 @@ function AdminPage() {
     setEditPaymentDisplayMode(
       (config.paymentDisplayMode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode
     );
+    setEditFacebookUrl(config.facebookUrl || SITE.facebookUrl);
+    setEditInstagramUrl(config.instagramUrl || SITE.instagramUrl);
+    setEditLinkedinUrl(config.linkedinUrl || SITE.linkedinUrl);
+    setEditWhatsappUrl(config.whatsappUrl || SITE.whatsappUrl);
     setEditPaymentInstructions(config.paymentInstructions || SITE.paymentInstructions);
     toast.info("Form reset to currently saved configuration.");
   }
@@ -1753,6 +1778,81 @@ function AdminPage() {
                       </div>
                     </div>
 
+                    {/* Social Media & WhatsApp Links Section */}
+                    <div className="pt-4 border-t space-y-3">
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                          <Share2 className="h-4 w-4 text-primary" /> Social Media & WhatsApp Links
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Direct links used in the header, footer, and contact page for donor communication and social media.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {/* WhatsApp Link */}
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                            WhatsApp Direct Link / Chat URL *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editWhatsappUrl}
+                            onChange={(e) => setEditWhatsappUrl(e.target.value)}
+                            placeholder="https://wa.link/tue7xa or https://wa.me/923219519360"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                          <p className="text-[11px] text-muted-foreground">
+                            Controls the "Chat on WhatsApp" links in the header, footer, and contact section.
+                          </p>
+                        </div>
+
+                        {/* Facebook URL */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            Facebook Page URL
+                          </label>
+                          <input
+                            type="text"
+                            value={editFacebookUrl}
+                            onChange={(e) => setEditFacebookUrl(e.target.value)}
+                            placeholder="https://www.facebook.com/thejuniorjinnahtrust"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        {/* Instagram URL */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            Instagram Profile URL
+                          </label>
+                          <input
+                            type="text"
+                            value={editInstagramUrl}
+                            onChange={(e) => setEditInstagramUrl(e.target.value)}
+                            placeholder="https://www.instagram.com/jinnahjuniortrust/"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        {/* LinkedIn URL */}
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            LinkedIn Company URL
+                          </label>
+                          <input
+                            type="text"
+                            value={editLinkedinUrl}
+                            onChange={(e) => setEditLinkedinUrl(e.target.value)}
+                            placeholder="https://www.linkedin.com/company/54089173/"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Frontend Account Details Display Option */}
                     <div className="pt-4 border-t space-y-3">
                       <div>
@@ -2260,7 +2360,7 @@ function AdminPage() {
 
                     {/* Contact Links Simulation */}
                     <div className="rounded-xl border bg-muted/40 p-3 space-y-2 text-xs">
-                      <p className="text-[10px] uppercase font-semibold text-muted-foreground">Public Contacts</p>
+                      <p className="text-[10px] uppercase font-semibold text-muted-foreground">Public Contacts & WhatsApp</p>
                       <div className="flex items-center gap-2 text-foreground font-medium truncate">
                         <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span className="truncate">{editConfigPhone || "Hotline"}</span>
@@ -2268,6 +2368,10 @@ function AdminPage() {
                       <div className="flex items-center gap-2 text-foreground font-medium truncate">
                         <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span className="truncate">{editConfigEmail || "Email"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-medium truncate">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="truncate text-[11px]">WhatsApp: {editWhatsappUrl || "wa.link"}</span>
                       </div>
                     </div>
 

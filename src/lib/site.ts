@@ -19,6 +19,10 @@ export const SITE = {
   wallet2AccountNumber: "",
   wallet2AccountTitle: "",
   paymentDisplayMode: "both" as "both" | "wallet_only" | "bank_only",
+  facebookUrl: "https://www.facebook.com/thejuniorjinnahtrust",
+  instagramUrl: "https://www.instagram.com/jinnahjuniortrust/",
+  linkedinUrl: "https://www.linkedin.com/company/54089173/",
+  whatsappUrl: "https://wa.link/tue7xa",
   paymentInstructions: "Please use your name as the transfer reference and upload your receipt screenshot below.",
 };
 
@@ -45,6 +49,11 @@ export function formatWhatsAppUrl(phone?: string) {
   const clean = (phone || SITE.donationPhone).replace(/[^0-9]/g, "");
   const intl = clean.startsWith("0") ? "92" + clean.slice(1) : clean.startsWith("92") ? clean : "92" + clean;
   return `https://wa.me/${intl}`;
+}
+
+export function getWhatsAppUrl(customUrl?: string, phone?: string) {
+  if (customUrl && customUrl.trim()) return customUrl.trim();
+  return formatWhatsAppUrl(phone || SITE.donationPhone);
 }
 
 export const SUGGESTED_CONTRIBUTIONS = [

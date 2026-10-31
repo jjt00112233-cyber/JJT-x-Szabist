@@ -12,7 +12,7 @@ import {
   GraduationCap,
   Sparkles,
 } from "lucide-react";
-import { SITE, gmailComposeUrl, useCampaignConfig } from "@/lib/site";
+import { SITE, gmailComposeUrl, useCampaignConfig, getWhatsAppUrl } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
@@ -217,7 +217,7 @@ export function SiteFooter() {
               </p>
               <div className="flex items-center gap-2">
                 <a
-                  href="https://www.facebook.com/thejuniorjinnahtrust"
+                  href={config.facebookUrl || SITE.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Junior Jinnah Trust Facebook"
@@ -226,7 +226,7 @@ export function SiteFooter() {
                   <FacebookIcon className="h-4 w-4" />
                 </a>
                 <a
-                  href="https://wa.link/tue7xa"
+                  href={getWhatsAppUrl(config.whatsappUrl, config.donationPhone)}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Chat on WhatsApp"
@@ -235,7 +235,7 @@ export function SiteFooter() {
                   <WhatsAppIcon className="h-4 w-4" />
                 </a>
                 <a
-                  href="https://www.instagram.com/jinnahjuniortrust/"
+                  href={config.instagramUrl || SITE.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Junior Jinnah Trust Instagram"
@@ -244,7 +244,7 @@ export function SiteFooter() {
                   <InstagramIcon className="h-4 w-4" />
                 </a>
                 <a
-                  href="https://www.linkedin.com/company/54089173/"
+                  href={config.linkedinUrl || SITE.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Junior Jinnah Trust LinkedIn"
@@ -374,7 +374,7 @@ export function SiteFooter() {
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-3">
               <a
-                href="https://www.facebook.com/thejuniorjinnahtrust"
+                href={config.facebookUrl || SITE.facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-primary transition-colors text-deep-foreground/60"
@@ -383,7 +383,7 @@ export function SiteFooter() {
                 <FacebookIcon className="h-3.5 w-3.5" />
               </a>
               <a
-                href="https://wa.link/tue7xa"
+                href={getWhatsAppUrl(config.whatsappUrl, config.donationPhone)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-primary transition-colors text-deep-foreground/60"
@@ -392,7 +392,7 @@ export function SiteFooter() {
                 <WhatsAppIcon className="h-3.5 w-3.5" />
               </a>
               <a
-                href="https://www.instagram.com/jinnahjuniortrust/"
+                href={config.instagramUrl || SITE.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-primary transition-colors text-deep-foreground/60"
@@ -401,7 +401,7 @@ export function SiteFooter() {
                 <InstagramIcon className="h-3.5 w-3.5" />
               </a>
               <a
-                href="https://www.linkedin.com/company/54089173/"
+                href={config.linkedinUrl || SITE.linkedinUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-primary transition-colors text-deep-foreground/60"
