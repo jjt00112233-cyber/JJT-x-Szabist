@@ -101,6 +101,15 @@ function AdminPage() {
   const [editConfigPhone, setEditConfigPhone] = useState(publicConfig.donationPhone);
   const [editConfigEmail, setEditConfigEmail] = useState(publicConfig.contactEmail);
   const [editConfigGoal, setEditConfigGoal] = useState(String(publicConfig.goal));
+  const [editBankName, setEditBankName] = useState(publicConfig.bankName || SITE.bankName);
+  const [editBankAccountTitle, setEditBankAccountTitle] = useState(publicConfig.bankAccountTitle || SITE.bankAccountTitle);
+  const [editBankAccountNumber, setEditBankAccountNumber] = useState(publicConfig.bankAccountNumber || SITE.bankAccountNumber);
+  const [editBankIban, setEditBankIban] = useState(publicConfig.bankIban || SITE.bankIban);
+  const [editEasypaisaNumber, setEditEasypaisaNumber] = useState(publicConfig.easypaisaNumber || SITE.easypaisaNumber);
+  const [editEasypaisaTitle, setEditEasypaisaTitle] = useState(publicConfig.easypaisaTitle || SITE.easypaisaTitle);
+  const [editJazzcashNumber, setEditJazzcashNumber] = useState(publicConfig.jazzcashNumber || SITE.jazzcashNumber);
+  const [editJazzcashTitle, setEditJazzcashTitle] = useState(publicConfig.jazzcashTitle || SITE.jazzcashTitle);
+  const [editPaymentInstructions, setEditPaymentInstructions] = useState(publicConfig.paymentInstructions || SITE.paymentInstructions);
   const [savingConfig, setSavingConfig] = useState(false);
 
   // Admin Credentials State
@@ -128,6 +137,15 @@ function AdminPage() {
       setEditConfigPhone(publicConfig.donationPhone);
       setEditConfigEmail(publicConfig.contactEmail);
       setEditConfigGoal(String(publicConfig.goal));
+      setEditBankName(publicConfig.bankName || SITE.bankName);
+      setEditBankAccountTitle(publicConfig.bankAccountTitle || SITE.bankAccountTitle);
+      setEditBankAccountNumber(publicConfig.bankAccountNumber || SITE.bankAccountNumber);
+      setEditBankIban(publicConfig.bankIban || SITE.bankIban);
+      setEditEasypaisaNumber(publicConfig.easypaisaNumber || SITE.easypaisaNumber);
+      setEditEasypaisaTitle(publicConfig.easypaisaTitle || SITE.easypaisaTitle);
+      setEditJazzcashNumber(publicConfig.jazzcashNumber || SITE.jazzcashNumber);
+      setEditJazzcashTitle(publicConfig.jazzcashTitle || SITE.jazzcashTitle);
+      setEditPaymentInstructions(publicConfig.paymentInstructions || SITE.paymentInstructions);
     }
   }, [
     publicConfig.name,
@@ -135,6 +153,15 @@ function AdminPage() {
     publicConfig.donationPhone,
     publicConfig.contactEmail,
     publicConfig.goal,
+    publicConfig.bankName,
+    publicConfig.bankAccountTitle,
+    publicConfig.bankAccountNumber,
+    publicConfig.bankIban,
+    publicConfig.easypaisaNumber,
+    publicConfig.easypaisaTitle,
+    publicConfig.jazzcashNumber,
+    publicConfig.jazzcashTitle,
+    publicConfig.paymentInstructions,
   ]);
 
   // Navigation State
@@ -212,6 +239,15 @@ function AdminPage() {
         setEditConfigPhone(res.campaignConfig.donationPhone);
         setEditConfigEmail(res.campaignConfig.contactEmail);
         setEditConfigGoal(String(res.campaignConfig.goal));
+        setEditBankName(res.campaignConfig.bankName || SITE.bankName);
+        setEditBankAccountTitle(res.campaignConfig.bankAccountTitle || SITE.bankAccountTitle);
+        setEditBankAccountNumber(res.campaignConfig.bankAccountNumber || SITE.bankAccountNumber);
+        setEditBankIban(res.campaignConfig.bankIban || SITE.bankIban);
+        setEditEasypaisaNumber(res.campaignConfig.easypaisaNumber || SITE.easypaisaNumber);
+        setEditEasypaisaTitle(res.campaignConfig.easypaisaTitle || SITE.easypaisaTitle);
+        setEditJazzcashNumber(res.campaignConfig.jazzcashNumber || SITE.jazzcashNumber);
+        setEditJazzcashTitle(res.campaignConfig.jazzcashTitle || SITE.jazzcashTitle);
+        setEditPaymentInstructions(res.campaignConfig.paymentInstructions || SITE.paymentInstructions);
       }
       if (res.adminEmail) {
         setAdminEmail(res.adminEmail);
@@ -464,6 +500,15 @@ function AdminPage() {
           donation_phone: editConfigPhone.trim(),
           contact_email: editConfigEmail.trim(),
           goal: Math.round(numGoal),
+          bank_name: editBankName.trim(),
+          bank_account_title: editBankAccountTitle.trim(),
+          bank_account_number: editBankAccountNumber.trim(),
+          bank_iban: editBankIban.trim(),
+          easypaisa_number: editEasypaisaNumber.trim(),
+          easypaisa_title: editEasypaisaTitle.trim(),
+          jazzcash_number: editJazzcashNumber.trim(),
+          jazzcash_title: editJazzcashTitle.trim(),
+          payment_instructions: editPaymentInstructions.trim(),
         },
       });
 
@@ -489,6 +534,15 @@ function AdminPage() {
     setEditConfigPhone(config.donationPhone);
     setEditConfigEmail(config.contactEmail);
     setEditConfigGoal(String(config.goal));
+    setEditBankName(config.bankName || SITE.bankName);
+    setEditBankAccountTitle(config.bankAccountTitle || SITE.bankAccountTitle);
+    setEditBankAccountNumber(config.bankAccountNumber || SITE.bankAccountNumber);
+    setEditBankIban(config.bankIban || SITE.bankIban);
+    setEditEasypaisaNumber(config.easypaisaNumber || SITE.easypaisaNumber);
+    setEditEasypaisaTitle(config.easypaisaTitle || SITE.easypaisaTitle);
+    setEditJazzcashNumber(config.jazzcashNumber || SITE.jazzcashNumber);
+    setEditJazzcashTitle(config.jazzcashTitle || SITE.jazzcashTitle);
+    setEditPaymentInstructions(config.paymentInstructions || SITE.paymentInstructions);
     toast.info("Form reset to currently saved configuration.");
   }
 
@@ -1619,6 +1673,161 @@ function AdminPage() {
                       </div>
                     </div>
 
+                    {/* Bank Transfer Details Section */}
+                    <div className="pt-4 border-t space-y-3">
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                          <Building className="h-4 w-4 text-primary" /> Bank Account Details (Online Banking & Raast)
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Displayed on /donate for donors making direct bank deposits or online bank transfers.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            Bank Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editBankName}
+                            onChange={(e) => setEditBankName(e.target.value)}
+                            placeholder="e.g. Meezan Bank, HBL, Bank Alfalah"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            Account Title *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editBankAccountTitle}
+                            onChange={(e) => setEditBankAccountTitle(e.target.value)}
+                            placeholder="e.g. Junior Jinnah Trust"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            Account Number *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editBankAccountNumber}
+                            onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                            placeholder="e.g. 01010101010101"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            IBAN (International / Raast) *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editBankIban}
+                            onChange={(e) => setEditBankIban(e.target.value)}
+                            placeholder="e.g. PK00MEZN0001010101010101"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mobile Wallets Details Section */}
+                    <div className="pt-4 border-t space-y-3">
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                          <Phone className="h-4 w-4 text-emerald-600" /> Mobile Wallets (EasyPaisa, JazzCash, SadaPay)
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Direct mobile account numbers shown under payment upload and bank transfer info.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            EasyPaisa Account Number *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editEasypaisaNumber}
+                            onChange={(e) => setEditEasypaisaNumber(e.target.value)}
+                            placeholder="03219519360"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            EasyPaisa Account Title
+                          </label>
+                          <input
+                            type="text"
+                            value={editEasypaisaTitle}
+                            onChange={(e) => setEditEasypaisaTitle(e.target.value)}
+                            placeholder="e.g. Junior Jinnah Trust"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            JazzCash / SadaPay Number *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={editJazzcashNumber}
+                            onChange={(e) => setEditJazzcashNumber(e.target.value)}
+                            placeholder="03219519360"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            JazzCash Account Title
+                          </label>
+                          <input
+                            type="text"
+                            value={editJazzcashTitle}
+                            onChange={(e) => setEditJazzcashTitle(e.target.value)}
+                            placeholder="e.g. Junior Jinnah Trust"
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Instructions Note */}
+                    <div className="pt-4 border-t space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                        Donor Transfer Instructions / Note
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editPaymentInstructions}
+                        onChange={(e) => setEditPaymentInstructions(e.target.value)}
+                        placeholder="Please use your name as the transfer reference and upload your receipt screenshot below."
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        Shown to donors on the /donate page right above the receipt upload zone.
+                      </p>
+                    </div>
+
                     {/* Actions Toolbar */}
                     <div className="pt-4 border-t flex flex-wrap items-center justify-between gap-3">
                       <Button
@@ -1714,6 +1923,35 @@ function AdminPage() {
                       <div className="flex items-center gap-2 text-foreground font-medium truncate">
                         <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
                         <span className="truncate">{editConfigEmail || "Email"}</span>
+                      </div>
+                    </div>
+
+                    {/* Bank & Mobile Wallets Simulation */}
+                    <div className="rounded-xl border bg-emerald-500/5 border-emerald-500/20 p-3 space-y-1.5 text-xs">
+                      <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                        <Building className="h-3 w-3" /> Official Bank & Wallet Details
+                      </p>
+                      <div className="space-y-1 pt-1 text-[11px]">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Bank:</span>
+                          <span className="font-semibold text-foreground">{editBankName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Title:</span>
+                          <span className="font-semibold text-foreground">{editBankAccountTitle}</span>
+                        </div>
+                        <div className="flex justify-between font-mono">
+                          <span className="text-muted-foreground font-sans">A/C:</span>
+                          <span className="font-semibold text-foreground">{editBankAccountNumber}</span>
+                        </div>
+                        <div className="flex justify-between font-mono">
+                          <span className="text-muted-foreground font-sans">IBAN:</span>
+                          <span className="font-semibold text-foreground truncate max-w-[130px]">{editBankIban}</span>
+                        </div>
+                        <div className="flex justify-between pt-1 border-t border-emerald-500/10 font-mono">
+                          <span className="text-muted-foreground font-sans">EasyPaisa:</span>
+                          <span className="font-semibold text-foreground">{editEasypaisaNumber}</span>
+                        </div>
                       </div>
                     </div>
 

@@ -296,6 +296,15 @@ export const getAdminData = createServerFn({ method: "POST" })
           donationPhone: cfg.donation_phone,
           contactEmail: cfg.contact_email,
           goal: Number(cfg.goal),
+          bankName: cfg.bank_name || SITE.bankName,
+          bankAccountTitle: cfg.bank_account_title || SITE.bankAccountTitle,
+          bankAccountNumber: cfg.bank_account_number || SITE.bankAccountNumber,
+          bankIban: cfg.bank_iban || SITE.bankIban,
+          easypaisaNumber: cfg.easypaisa_number || SITE.easypaisaNumber,
+          easypaisaTitle: cfg.easypaisa_title || SITE.easypaisaTitle,
+          jazzcashNumber: cfg.jazzcash_number || SITE.jazzcashNumber,
+          jazzcashTitle: cfg.jazzcash_title || SITE.jazzcashTitle,
+          paymentInstructions: cfg.payment_instructions || SITE.paymentInstructions,
           updatedAt: cfg.updated_at ? new Date(cfg.updated_at).toISOString() : undefined,
         }
       : {
@@ -304,6 +313,15 @@ export const getAdminData = createServerFn({ method: "POST" })
           donationPhone: SITE.donationPhone,
           contactEmail: SITE.contactEmail,
           goal: SITE.goal,
+          bankName: SITE.bankName,
+          bankAccountTitle: SITE.bankAccountTitle,
+          bankAccountNumber: SITE.bankAccountNumber,
+          bankIban: SITE.bankIban,
+          easypaisaNumber: SITE.easypaisaNumber,
+          easypaisaTitle: SITE.easypaisaTitle,
+          jazzcashNumber: SITE.jazzcashNumber,
+          jazzcashTitle: SITE.jazzcashTitle,
+          paymentInstructions: SITE.paymentInstructions,
         };
 
     const activeAdminEmail = authRows[0]?.email || process.env.ADMIN_EMAIL || "admin@jjtrust.org";
@@ -390,6 +408,15 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
       donation_phone: string;
       contact_email: string;
       goal: number;
+      bank_name?: string;
+      bank_account_title?: string;
+      bank_account_number?: string;
+      bank_iban?: string;
+      easypaisa_number?: string;
+      easypaisa_title?: string;
+      jazzcash_number?: string;
+      jazzcash_title?: string;
+      payment_instructions?: string;
     }) => data
   )
   .handler(async ({ data }) => {
@@ -403,6 +430,15 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
     const cleanPhone = (data.donation_phone || "").trim() || SITE.donationPhone;
     const cleanEmail = (data.contact_email || "").trim() || SITE.contactEmail;
     const cleanGoal = Number(data.goal) > 0 ? Math.round(Number(data.goal)) : SITE.goal;
+    const cleanBankName = (data.bank_name || "").trim() || SITE.bankName;
+    const cleanBankAccountTitle = (data.bank_account_title || "").trim() || SITE.bankAccountTitle;
+    const cleanBankAccountNumber = (data.bank_account_number || "").trim() || SITE.bankAccountNumber;
+    const cleanBankIban = (data.bank_iban || "").trim() || SITE.bankIban;
+    const cleanEasypaisaNumber = (data.easypaisa_number || "").trim() || cleanPhone;
+    const cleanEasypaisaTitle = (data.easypaisa_title || "").trim() || cleanBankAccountTitle;
+    const cleanJazzcashNumber = (data.jazzcash_number || "").trim() || cleanPhone;
+    const cleanJazzcashTitle = (data.jazzcash_title || "").trim() || cleanBankAccountTitle;
+    const cleanPaymentInstructions = (data.payment_instructions || "").trim() || SITE.paymentInstructions;
 
     await db
       .insert(campaignConfig)
@@ -413,6 +449,15 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         donation_phone: cleanPhone,
         contact_email: cleanEmail,
         goal: String(cleanGoal),
+        bank_name: cleanBankName,
+        bank_account_title: cleanBankAccountTitle,
+        bank_account_number: cleanBankAccountNumber,
+        bank_iban: cleanBankIban,
+        easypaisa_number: cleanEasypaisaNumber,
+        easypaisa_title: cleanEasypaisaTitle,
+        jazzcash_number: cleanJazzcashNumber,
+        jazzcash_title: cleanJazzcashTitle,
+        payment_instructions: cleanPaymentInstructions,
         updated_at: new Date(),
       })
       .onConflictDoUpdate({
@@ -423,6 +468,15 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
           donation_phone: cleanPhone,
           contact_email: cleanEmail,
           goal: String(cleanGoal),
+          bank_name: cleanBankName,
+          bank_account_title: cleanBankAccountTitle,
+          bank_account_number: cleanBankAccountNumber,
+          bank_iban: cleanBankIban,
+          easypaisa_number: cleanEasypaisaNumber,
+          easypaisa_title: cleanEasypaisaTitle,
+          jazzcash_number: cleanJazzcashNumber,
+          jazzcash_title: cleanJazzcashTitle,
+          payment_instructions: cleanPaymentInstructions,
           updated_at: new Date(),
         },
       });
@@ -435,6 +489,15 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         donationPhone: cleanPhone,
         contactEmail: cleanEmail,
         goal: cleanGoal,
+        bankName: cleanBankName,
+        bankAccountTitle: cleanBankAccountTitle,
+        bankAccountNumber: cleanBankAccountNumber,
+        bankIban: cleanBankIban,
+        easypaisaNumber: cleanEasypaisaNumber,
+        easypaisaTitle: cleanEasypaisaTitle,
+        jazzcashNumber: cleanJazzcashNumber,
+        jazzcashTitle: cleanJazzcashTitle,
+        paymentInstructions: cleanPaymentInstructions,
       },
     };
   });

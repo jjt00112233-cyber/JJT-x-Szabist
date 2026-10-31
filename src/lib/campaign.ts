@@ -11,6 +11,15 @@ export type CampaignConfig = {
   donationPhone: string;
   contactEmail: string;
   goal: number;
+  bankName: string;
+  bankAccountTitle: string;
+  bankAccountNumber: string;
+  bankIban: string;
+  easypaisaNumber: string;
+  easypaisaTitle: string;
+  jazzcashNumber: string;
+  jazzcashTitle: string;
+  paymentInstructions: string;
   updatedAt?: string;
 };
 
@@ -31,6 +40,15 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
           donationPhone: row.donation_phone || SITE.donationPhone,
           contactEmail: row.contact_email || SITE.contactEmail,
           goal: Number(row.goal) || SITE.goal,
+          bankName: row.bank_name || SITE.bankName,
+          bankAccountTitle: row.bank_account_title || SITE.bankAccountTitle,
+          bankAccountNumber: row.bank_account_number || SITE.bankAccountNumber,
+          bankIban: row.bank_iban || SITE.bankIban,
+          easypaisaNumber: row.easypaisa_number || SITE.easypaisaNumber,
+          easypaisaTitle: row.easypaisa_title || SITE.easypaisaTitle,
+          jazzcashNumber: row.jazzcash_number || SITE.jazzcashNumber,
+          jazzcashTitle: row.jazzcash_title || SITE.jazzcashTitle,
+          paymentInstructions: row.payment_instructions || SITE.paymentInstructions,
           updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
         };
       }
@@ -44,6 +62,15 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
       donationPhone: SITE.donationPhone,
       contactEmail: SITE.contactEmail,
       goal: SITE.goal,
+      bankName: SITE.bankName,
+      bankAccountTitle: SITE.bankAccountTitle,
+      bankAccountNumber: SITE.bankAccountNumber,
+      bankIban: SITE.bankIban,
+      easypaisaNumber: SITE.easypaisaNumber,
+      easypaisaTitle: SITE.easypaisaTitle,
+      jazzcashNumber: SITE.jazzcashNumber,
+      jazzcashTitle: SITE.jazzcashTitle,
+      paymentInstructions: SITE.paymentInstructions,
     };
   }
 );
@@ -63,6 +90,15 @@ export function useCampaignConfig(): CampaignConfig {
       donationPhone: SITE.donationPhone,
       contactEmail: SITE.contactEmail,
       goal: SITE.goal,
+      bankName: SITE.bankName,
+      bankAccountTitle: SITE.bankAccountTitle,
+      bankAccountNumber: SITE.bankAccountNumber,
+      bankIban: SITE.bankIban,
+      easypaisaNumber: SITE.easypaisaNumber,
+      easypaisaTitle: SITE.easypaisaTitle,
+      jazzcashNumber: SITE.jazzcashNumber,
+      jazzcashTitle: SITE.jazzcashTitle,
+      paymentInstructions: SITE.paymentInstructions,
     }
   );
 }

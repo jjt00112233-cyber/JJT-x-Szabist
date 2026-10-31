@@ -16,6 +16,7 @@ import {
 import { PageHero } from "@/components/PageHero";
 import { submitDonationRequest } from "@/lib/donations";
 import { Button } from "@/components/ui/button";
+import { useCampaignConfig, formatWhatsAppUrl, gmailComposeUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -73,6 +74,7 @@ function LinkedInIcon({ className }: { className?: string }) {
 }
 
 function ContactPage() {
+  const config = useCampaignConfig();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -192,19 +194,19 @@ function ContactPage() {
                   <p className="text-xs uppercase font-semibold text-muted-foreground">Phone & WhatsApp</p>
                   <div className="space-y-1.5 pt-1">
                     <a
-                      href="https://wa.link/tue7xa"
+                      href={formatWhatsAppUrl(config.donationPhone)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between text-sm font-semibold text-foreground hover:text-primary transition"
                     >
-                      <span>+92-332-311-1345</span>
+                      <span>{config.donationPhone}</span>
                       <span className="text-[11px] text-emerald-600 font-medium">WhatsApp</span>
                     </a>
                     <a
-                      href="tel:+923325488876"
+                      href={`tel:${config.donationPhone}`}
                       className="flex items-center justify-between text-sm font-semibold text-foreground hover:text-primary transition"
                     >
-                      <span>+92-332-548-8876</span>
+                      <span>{config.donationPhone}</span>
                       <span className="text-[11px] text-muted-foreground font-medium">Direct Line</span>
                     </a>
                   </div>
@@ -219,16 +221,26 @@ function ContactPage() {
                   <Mail className="h-5 w-5" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs uppercase font-semibold text-muted-foreground">Email</p>
+                  <p className="text-xs uppercase font-semibold text-muted-foreground">Official Email</p>
                   <a
-                    href="mailto:info@jjtrust.org"
+                    href={`mailto:${config.contactEmail}`}
                     className="block text-sm font-semibold text-foreground hover:text-primary transition"
                   >
-                    info@jjtrust.org
+                    {config.contactEmail}
                   </a>
                   <p className="text-xs text-muted-foreground">
                     General inquiries, verification & partnership queries
                   </p>
+                  <div className="pt-1">
+                    <a
+                      href={gmailComposeUrl(config.contactEmail)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                    >
+                      Open Gmail Composer ↗
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -310,7 +322,7 @@ function ContactPage() {
                       Send Another Message
                     </Button>
                     <Button asChild className="bg-primary text-primary-foreground">
-                      <a href="https://wa.link/tue7xa" target="_blank" rel="noopener noreferrer">
+                      <a href={formatWhatsAppUrl(config.donationPhone)} target="_blank" rel="noopener noreferrer">
                         Chat on WhatsApp
                       </a>
                     </Button>

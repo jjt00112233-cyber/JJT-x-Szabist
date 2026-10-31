@@ -34,4 +34,20 @@ describe("Drizzle Schema", () => {
     expect(columns).toHaveProperty("salt");
     expect(columns).toHaveProperty("updated_at");
   });
+
+  it("defines the campaign_config table with dynamic bank and mobile wallet columns", () => {
+    const columns = getTableColumns(campaignConfig);
+    expect(columns).toHaveProperty("id");
+    expect(columns).toHaveProperty("name");
+    expect(columns).toHaveProperty("donation_phone");
+    expect(columns).toHaveProperty("contact_email");
+    expect(columns).toHaveProperty("goal");
+    expect(columns).toHaveProperty("bank_name");
+    expect(columns).toHaveProperty("bank_account_title");
+    expect(columns).toHaveProperty("bank_account_number");
+    expect(columns).toHaveProperty("bank_iban");
+    expect(columns).toHaveProperty("easypaisa_number");
+    expect(columns).toHaveProperty("jazzcash_number");
+    expect(columns).toHaveProperty("payment_instructions");
+  });
 });

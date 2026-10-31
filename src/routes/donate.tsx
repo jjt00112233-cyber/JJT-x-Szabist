@@ -2,7 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Phone, CheckCircle2, Mail, UploadCloud, X, FileCheck, Eye } from "lucide-react";
+import {
+  Phone,
+  CheckCircle2,
+  Mail,
+  UploadCloud,
+  X,
+  FileCheck,
+  Eye,
+  Copy,
+  Check,
+  Building,
+  CreditCard,
+  Wallet,
+} from "lucide-react";
 import { submitDonationRequest } from "@/lib/donations";
 import { uploadPaymentScreenshot } from "@/lib/upload";
 import { PageHero } from "@/components/PageHero";
@@ -35,6 +48,42 @@ const schema = z.object({
 });
 
 const input = "mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 outline-none focus:border-ring focus:ring-2 focus:ring-ring/30";
+
+function CopyButton({ text, label }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success(`Copied ${label || text} to clipboard!`);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy. Please select and copy manually.");
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={`Copy ${label || text}`}
+      className="inline-flex items-center gap-1 rounded bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground px-2 py-1 text-[11px] font-medium transition cursor-pointer"
+    >
+      {copied ? (
+        <>
+          <Check className="h-3 w-3 text-emerald-600" />
+          <span className="text-emerald-600 font-semibold">Copied</span>
+        </>
+      ) : (
+        <>
+          <Copy className="h-3 w-3" />
+          <span>Copy</span>
+        </>
+      )}
+    </button>
+  );
+}
 
 function Donate() {
   const config = useCampaignConfig();
@@ -190,12 +239,129 @@ function Donate() {
               </a>
             </div>
 
+            {/* Quick reference of bank details on completed pledge screen */}
+            <div className="mt-6 rounded-xl border bg-muted/40 p-4 text-xs text-left space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Official Bank & Payment Information
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-0.5">
+                  <span className="text-muted-foreground block text-[10px] uppercase">Bank Transfer</span>
+                  <span className="font-semibold text-foreground block">{config.bankName}</span>
+                  <span className="font-mono text-foreground block">A/C: {config.bankAccountNumber}</span>
+                  <span className="font-mono text-muted-foreground text-[11px] block truncate">IBAN: {config.bankIban}</span>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-muted-foreground block text-[10px] uppercase">Mobile Wallets</span>
+                  <span className="font-semibold text-foreground block">EasyPaisa: {config.easypaisaNumber}</span>
+                  <span className="font-semibold text-foreground block">JazzCash / SadaPay: {config.jazzcashNumber}</span>
+                  <span className="text-muted-foreground text-[11px] block">Title: {config.easypaisaTitle || config.bankAccountTitle}</span>
+                </div>
+              </div>
+            </div>
+
             <p className="mt-6 text-xs sm:text-sm text-muted-foreground">
               Every confirmed contribution is listed on our progress page.
             </p>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="grid gap-4 sm:gap-5 rounded-2xl border bg-card p-5 sm:p-8 shadow-xl sm:grid-cols-2">
+          <>
+            {/* Official Bank & Mobile Accounts Card */}
+            <div className="mb-8 rounded-2xl border border-primary/20 bg-card p-5 sm:p-7 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Building className="h-5 w-5 text-primary" /> Official Payment & Bank Accounts
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Send your donation directly via Online Banking, EasyPaisa, JazzCash, or SadaPay.
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Verified Accounts
+                </span>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2 mt-5">
+                {/* Bank Transfer Box */}
+                <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                      <CreditCard className="h-4 w-4" /> Bank Account (Online / Raast)
+                    </span>
+                    <span className="text-[11px] font-semibold text-foreground bg-background px-2 py-0.5 rounded border">
+                      {config.bankName}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground block text-[11px]">Account Title</span>
+                      <span className="font-bold text-foreground text-sm">{config.bankAccountTitle}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                      <div>
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">Account Number</span>
+                        <span className="font-mono font-bold text-foreground text-sm">{config.bankAccountNumber}</span>
+                      </div>
+                      <CopyButton text={config.bankAccountNumber} label="Account Number" />
+                    </div>
+
+                    <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                      <div className="min-w-0 pr-2">
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">IBAN Number</span>
+                        <span className="font-mono font-bold text-foreground text-xs block truncate">{config.bankIban}</span>
+                      </div>
+                      <CopyButton text={config.bankIban} label="IBAN Number" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Wallets Box */}
+                <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                      <Wallet className="h-4 w-4" /> Mobile Wallets (EasyPaisa & JazzCash)
+                    </span>
+                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      Instant Transfer
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                      <div>
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                          EasyPaisa ({config.easypaisaTitle || config.bankAccountTitle})
+                        </span>
+                        <span className="font-mono font-bold text-foreground text-sm">{config.easypaisaNumber}</span>
+                      </div>
+                      <CopyButton text={config.easypaisaNumber} label="EasyPaisa Number" />
+                    </div>
+
+                    <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                      <div>
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                          JazzCash / SadaPay ({config.jazzcashTitle || config.bankAccountTitle})
+                        </span>
+                        <span className="font-mono font-bold text-foreground text-sm">{config.jazzcashNumber}</span>
+                      </div>
+                      <CopyButton text={config.jazzcashNumber} label="JazzCash Number" />
+                    </div>
+
+                    <div className="pt-1">
+                      <span className="text-[11px] text-muted-foreground block">
+                        {config.paymentInstructions || "Please upload a transfer screenshot below after sending for immediate verification."}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={onSubmit} className="grid gap-4 sm:gap-5 rounded-2xl border bg-card p-5 sm:p-8 shadow-xl sm:grid-cols-2">
             <label className="text-sm font-medium sm:col-span-2">
               I am donating as
               <select name="donor_type" className={input} defaultValue="individual">
@@ -240,9 +406,16 @@ function Donate() {
                   </button>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                If you have already sent funds via Online Banking, EasyPaisa, JazzCash, or SadaPay/Nayapay (to {config.donationPhone}), upload a screenshot here for fast verification.
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                If you have already sent funds via Online Banking, EasyPaisa, JazzCash, or SadaPay/Nayapay (to <strong className="text-foreground font-semibold">{config.easypaisaNumber || config.donationPhone}</strong>), upload a screenshot here for fast verification.
               </p>
+              <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[11px] text-muted-foreground">
+                <span>Bank: <strong className="text-foreground">{config.bankName}</strong></span>
+                <span>•</span>
+                <span>A/C: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankAccountNumber}</code></span>
+                <span>•</span>
+                <span>IBAN: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankIban}</code></span>
+              </div>
 
               {!screenshotPreview ? (
                 <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-input bg-muted/30 p-6 text-center transition hover:border-primary hover:bg-muted/50">
@@ -310,6 +483,7 @@ function Donate() {
               {busy ? (uploadStatus || "Processing…") : "Submit Donation Inquiry"}
             </Button>
           </form>
+          </>
         )}
         <div className="mt-10 rounded-xl bg-muted p-6 text-center text-sm">
           <p className="text-muted-foreground">Have a question before giving?</p>
