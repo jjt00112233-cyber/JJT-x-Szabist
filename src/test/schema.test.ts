@@ -48,6 +48,12 @@ describe("Drizzle Schema", () => {
     expect(columns).toHaveProperty("bank_iban");
     expect(columns).toHaveProperty("easypaisa_number");
     expect(columns).toHaveProperty("jazzcash_number");
+    expect(columns).toHaveProperty("wallet_providers");
+    expect(columns).toHaveProperty("wallet_account_number");
+    expect(columns).toHaveProperty("wallet_account_title");
+    expect(columns).toHaveProperty("wallet2_providers");
+    expect(columns).toHaveProperty("wallet2_account_number");
+    expect(columns).toHaveProperty("wallet2_account_title");
     expect(columns).toHaveProperty("payment_instructions");
   });
 });

@@ -12,8 +12,22 @@ export const SITE = {
   easypaisaTitle: "Junior Jinnah Trust",
   jazzcashNumber: "03219519360",
   jazzcashTitle: "Junior Jinnah Trust",
+  walletProviders: "EasyPaisa, JazzCash, SadaPay, NayaPay",
+  walletAccountNumber: "03219519360",
+  walletAccountTitle: "Junior Jinnah Trust",
+  wallet2Providers: "",
+  wallet2AccountNumber: "",
+  wallet2AccountTitle: "",
   paymentInstructions: "Please use your name as the transfer reference and upload your receipt screenshot below.",
 };
+
+export const MOBILE_WALLET_OPTIONS = [
+  "EasyPaisa",
+  "JazzCash",
+  "SadaPay",
+  "NayaPay",
+  "Raast",
+] as const;
 
 export function formatRs(n: number) {
   return "Rs " + Math.round(n).toLocaleString("en-PK");

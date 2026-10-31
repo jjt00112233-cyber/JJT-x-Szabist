@@ -19,6 +19,12 @@ export type CampaignConfig = {
   easypaisaTitle: string;
   jazzcashNumber: string;
   jazzcashTitle: string;
+  walletProviders: string;
+  walletAccountNumber: string;
+  walletAccountTitle: string;
+  wallet2Providers?: string;
+  wallet2AccountNumber?: string;
+  wallet2AccountTitle?: string;
   paymentInstructions: string;
   updatedAt?: string;
 };
@@ -48,6 +54,12 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
           easypaisaTitle: row.easypaisa_title || SITE.easypaisaTitle,
           jazzcashNumber: row.jazzcash_number || SITE.jazzcashNumber,
           jazzcashTitle: row.jazzcash_title || SITE.jazzcashTitle,
+          walletProviders: row.wallet_providers || SITE.walletProviders,
+          walletAccountNumber: row.wallet_account_number || row.easypaisa_number || SITE.walletAccountNumber,
+          walletAccountTitle: row.wallet_account_title || row.easypaisa_title || SITE.walletAccountTitle,
+          wallet2Providers: row.wallet2_providers || "",
+          wallet2AccountNumber: row.wallet2_account_number || "",
+          wallet2AccountTitle: row.wallet2_account_title || "",
           paymentInstructions: row.payment_instructions || SITE.paymentInstructions,
           updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
         };
@@ -70,6 +82,12 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
       easypaisaTitle: SITE.easypaisaTitle,
       jazzcashNumber: SITE.jazzcashNumber,
       jazzcashTitle: SITE.jazzcashTitle,
+      walletProviders: SITE.walletProviders,
+      walletAccountNumber: SITE.walletAccountNumber,
+      walletAccountTitle: SITE.walletAccountTitle,
+      wallet2Providers: SITE.wallet2Providers,
+      wallet2AccountNumber: SITE.wallet2AccountNumber,
+      wallet2AccountTitle: SITE.wallet2AccountTitle,
       paymentInstructions: SITE.paymentInstructions,
     };
   }
@@ -98,6 +116,12 @@ export function useCampaignConfig(): CampaignConfig {
       easypaisaTitle: SITE.easypaisaTitle,
       jazzcashNumber: SITE.jazzcashNumber,
       jazzcashTitle: SITE.jazzcashTitle,
+      walletProviders: SITE.walletProviders,
+      walletAccountNumber: SITE.walletAccountNumber,
+      walletAccountTitle: SITE.walletAccountTitle,
+      wallet2Providers: SITE.wallet2Providers,
+      wallet2AccountNumber: SITE.wallet2AccountNumber,
+      wallet2AccountTitle: SITE.wallet2AccountTitle,
       paymentInstructions: SITE.paymentInstructions,
     }
   );

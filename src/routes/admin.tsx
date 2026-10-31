@@ -33,6 +33,7 @@ import {
   UploadCloud,
   Save,
   RotateCcw,
+  Wallet,
 } from "lucide-react";
 import {
   adminLogin,
@@ -45,7 +46,7 @@ import {
 } from "@/lib/admin";
 import { uploadPaymentScreenshot } from "@/lib/upload";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { SITE, formatRs, useCampaignConfig, type CampaignConfig } from "@/lib/site";
+import { SITE, formatRs, useCampaignConfig, MOBILE_WALLET_OPTIONS, type CampaignConfig } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
@@ -106,6 +107,33 @@ function AdminPage() {
   const [editEasypaisaTitle, setEditEasypaisaTitle] = useState(publicConfig.easypaisaTitle || SITE.easypaisaTitle);
   const [editJazzcashNumber, setEditJazzcashNumber] = useState(publicConfig.jazzcashNumber || SITE.jazzcashNumber);
   const [editJazzcashTitle, setEditJazzcashTitle] = useState(publicConfig.jazzcashTitle || SITE.jazzcashTitle);
+  const [editWalletProviders, setEditWalletProviders] = useState<string[]>(
+    (publicConfig.walletProviders || SITE.walletProviders)
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+  const [editWalletAccountNumber, setEditWalletAccountNumber] = useState(
+    publicConfig.walletAccountNumber || publicConfig.easypaisaNumber || SITE.walletAccountNumber
+  );
+  const [editWalletAccountTitle, setEditWalletAccountTitle] = useState(
+    publicConfig.walletAccountTitle || publicConfig.easypaisaTitle || SITE.walletAccountTitle
+  );
+  const [editWallet2Providers, setEditWallet2Providers] = useState<string[]>(
+    (publicConfig.wallet2Providers || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+  const [editWallet2AccountNumber, setEditWallet2AccountNumber] = useState(
+    publicConfig.wallet2AccountNumber || ""
+  );
+  const [editWallet2AccountTitle, setEditWallet2AccountTitle] = useState(
+    publicConfig.wallet2AccountTitle || ""
+  );
+  const [showSecondaryWallet, setShowSecondaryWallet] = useState(
+    Boolean(publicConfig.wallet2AccountNumber)
+  );
   const [editPaymentInstructions, setEditPaymentInstructions] = useState(publicConfig.paymentInstructions || SITE.paymentInstructions);
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -138,6 +166,27 @@ function AdminPage() {
       setEditEasypaisaTitle(publicConfig.easypaisaTitle || SITE.easypaisaTitle);
       setEditJazzcashNumber(publicConfig.jazzcashNumber || SITE.jazzcashNumber);
       setEditJazzcashTitle(publicConfig.jazzcashTitle || SITE.jazzcashTitle);
+      const provs = (publicConfig.walletProviders || SITE.walletProviders)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      setEditWalletProviders(provs);
+      setEditWalletAccountNumber(
+        publicConfig.walletAccountNumber || publicConfig.easypaisaNumber || SITE.walletAccountNumber
+      );
+      setEditWalletAccountTitle(
+        publicConfig.walletAccountTitle || publicConfig.easypaisaTitle || SITE.walletAccountTitle
+      );
+      const secProvs = (publicConfig.wallet2Providers || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      setEditWallet2Providers(secProvs);
+      setEditWallet2AccountNumber(publicConfig.wallet2AccountNumber || "");
+      setEditWallet2AccountTitle(publicConfig.wallet2AccountTitle || "");
+      if (publicConfig.wallet2AccountNumber) {
+        setShowSecondaryWallet(true);
+      }
       setEditPaymentInstructions(publicConfig.paymentInstructions || SITE.paymentInstructions);
     }
   }, [
@@ -154,6 +203,12 @@ function AdminPage() {
     publicConfig.easypaisaTitle,
     publicConfig.jazzcashNumber,
     publicConfig.jazzcashTitle,
+    publicConfig.walletProviders,
+    publicConfig.walletAccountNumber,
+    publicConfig.walletAccountTitle,
+    publicConfig.wallet2Providers,
+    publicConfig.wallet2AccountNumber,
+    publicConfig.wallet2AccountTitle,
     publicConfig.paymentInstructions,
   ]);
 
@@ -240,6 +295,27 @@ function AdminPage() {
         setEditEasypaisaTitle(res.campaignConfig.easypaisaTitle || SITE.easypaisaTitle);
         setEditJazzcashNumber(res.campaignConfig.jazzcashNumber || SITE.jazzcashNumber);
         setEditJazzcashTitle(res.campaignConfig.jazzcashTitle || SITE.jazzcashTitle);
+        const provs = (res.campaignConfig.walletProviders || SITE.walletProviders)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        setEditWalletProviders(provs);
+        setEditWalletAccountNumber(
+          res.campaignConfig.walletAccountNumber || res.campaignConfig.easypaisaNumber || SITE.walletAccountNumber
+        );
+        setEditWalletAccountTitle(
+          res.campaignConfig.walletAccountTitle || res.campaignConfig.easypaisaTitle || SITE.walletAccountTitle
+        );
+        const secProvs = (res.campaignConfig.wallet2Providers || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        setEditWallet2Providers(secProvs);
+        setEditWallet2AccountNumber(res.campaignConfig.wallet2AccountNumber || "");
+        setEditWallet2AccountTitle(res.campaignConfig.wallet2AccountTitle || "");
+        if (res.campaignConfig.wallet2AccountNumber) {
+          setShowSecondaryWallet(true);
+        }
         setEditPaymentInstructions(res.campaignConfig.paymentInstructions || SITE.paymentInstructions);
       }
       if (res.adminEmail) {
@@ -482,6 +558,8 @@ function AdminPage() {
 
     setSavingConfig(true);
     try {
+      const provsStr = editWalletProviders.join(", ");
+      const secProvsStr = editWallet2Providers.join(", ");
       const res = await updateCampaignConfigAdmin({
         data: {
           token,
@@ -494,10 +572,16 @@ function AdminPage() {
           bank_account_title: editBankAccountTitle.trim(),
           bank_account_number: editBankAccountNumber.trim(),
           bank_iban: editBankIban.trim(),
-          easypaisa_number: editEasypaisaNumber.trim(),
-          easypaisa_title: editEasypaisaTitle.trim(),
-          jazzcash_number: editJazzcashNumber.trim(),
-          jazzcash_title: editJazzcashTitle.trim(),
+          easypaisa_number: editWalletAccountNumber.trim() || editEasypaisaNumber.trim(),
+          easypaisa_title: editWalletAccountTitle.trim() || editEasypaisaTitle.trim(),
+          jazzcash_number: editWalletAccountNumber.trim() || editJazzcashNumber.trim(),
+          jazzcash_title: editWalletAccountTitle.trim() || editJazzcashTitle.trim(),
+          wallet_providers: provsStr || SITE.walletProviders,
+          wallet_account_number: editWalletAccountNumber.trim(),
+          wallet_account_title: editWalletAccountTitle.trim(),
+          wallet2_providers: showSecondaryWallet ? secProvsStr : "",
+          wallet2_account_number: showSecondaryWallet ? editWallet2AccountNumber.trim() : "",
+          wallet2_account_title: showSecondaryWallet ? editWallet2AccountTitle.trim() : "",
           payment_instructions: editPaymentInstructions.trim(),
         },
       });
@@ -532,6 +616,21 @@ function AdminPage() {
     setEditEasypaisaTitle(config.easypaisaTitle || SITE.easypaisaTitle);
     setEditJazzcashNumber(config.jazzcashNumber || SITE.jazzcashNumber);
     setEditJazzcashTitle(config.jazzcashTitle || SITE.jazzcashTitle);
+    const provs = (config.walletProviders || SITE.walletProviders)
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setEditWalletProviders(provs);
+    setEditWalletAccountNumber(config.walletAccountNumber || config.easypaisaNumber || SITE.walletAccountNumber);
+    setEditWalletAccountTitle(config.walletAccountTitle || config.easypaisaTitle || SITE.walletAccountTitle);
+    const secProvs = (config.wallet2Providers || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    setEditWallet2Providers(secProvs);
+    setEditWallet2AccountNumber(config.wallet2AccountNumber || "");
+    setEditWallet2AccountTitle(config.wallet2AccountTitle || "");
+    setShowSecondaryWallet(Boolean(config.wallet2AccountNumber));
     setEditPaymentInstructions(config.paymentInstructions || SITE.paymentInstructions);
     toast.info("Form reset to currently saved configuration.");
   }
@@ -1711,70 +1810,261 @@ function AdminPage() {
                     </div>
 
                     {/* Mobile Wallets Details Section */}
-                    <div className="pt-4 border-t space-y-3">
+                    <div className="pt-4 border-t space-y-4">
                       <div>
                         <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                          <Phone className="h-4 w-4 text-emerald-600" /> Mobile Wallets (EasyPaisa, JazzCash, SadaPay)
+                          <Wallet className="h-4 w-4 text-emerald-600" /> Mobile Wallets Configuration
                         </h4>
                         <p className="text-[11px] text-muted-foreground">
-                          Direct mobile account numbers shown under payment upload and bank transfer info.
+                          Configure supported mobile wallets (EasyPaisa, JazzCash, SadaPay, NayaPay, Raast), account number, and title.
                         </p>
                       </div>
 
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            EasyPaisa Account Number *
+                      {/* Primary Mobile Wallet Card */}
+                      <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                            Supported Wallet Providers (Select Single or Multiple) *
                           </label>
-                          <input
-                            type="text"
-                            required
-                            value={editEasypaisaNumber}
-                            onChange={(e) => setEditEasypaisaNumber(e.target.value)}
-                            placeholder="03219519360"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
+
+                          {/* Interactive multi-select pills */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {MOBILE_WALLET_OPTIONS.map((opt) => {
+                              const isSelected = editWalletProviders.includes(opt);
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setEditWalletProviders(editWalletProviders.filter((p) => p !== opt));
+                                    } else {
+                                      setEditWalletProviders([...editWalletProviders, opt]);
+                                    }
+                                  }}
+                                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                                    isSelected
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-background border border-input text-muted-foreground hover:text-foreground hover:bg-accent"
+                                  }`}
+                                >
+                                  {isSelected ? "✓" : "+"} {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Quick Dropdown Selector to add provider or select standard option */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <select
+                              aria-label="Add Wallet Provider"
+                              className="text-xs rounded-lg border border-input bg-background px-2.5 py-1.5 text-foreground outline-none focus:border-primary"
+                              value=""
+                              onChange={(e) => {
+                                const val = e.target.value.trim();
+                                if (val && !editWalletProviders.includes(val)) {
+                                  setEditWalletProviders([...editWalletProviders, val]);
+                                }
+                                e.target.value = "";
+                              }}
+                            >
+                              <option value="">+ Add Provider from Dropdown...</option>
+                              {MOBILE_WALLET_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt} disabled={editWalletProviders.includes(opt)}>
+                                  {opt} {editWalletProviders.includes(opt) ? "(Selected)" : ""}
+                                </option>
+                              ))}
+                            </select>
+
+                            {editWalletProviders.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setEditWalletProviders([])}
+                                className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                              >
+                                Clear selection
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Display active selected providers */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            <span className="text-[11px] text-muted-foreground">Selected:</span>
+                            {editWalletProviders.length > 0 ? (
+                              editWalletProviders.map((prov) => (
+                                <span
+                                  key={prov}
+                                  className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-300"
+                                >
+                                  {prov}
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditWalletProviders(editWalletProviders.filter((p) => p !== prov))}
+                                    className="ml-0.5 hover:text-destructive"
+                                    title={`Remove ${prov}`}
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-[11px] text-destructive italic">
+                                Please select at least one provider (e.g. EasyPaisa, JazzCash, SadaPay)
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            EasyPaisa Account Title
-                          </label>
-                          <input
-                            type="text"
-                            value={editEasypaisaTitle}
-                            onChange={(e) => setEditEasypaisaTitle(e.target.value)}
-                            placeholder="e.g. Junior Jinnah Trust"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
+                        <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-muted/50">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              Account Number *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={editWalletAccountNumber}
+                              onChange={(e) => setEditWalletAccountNumber(e.target.value)}
+                              placeholder="03219519360"
+                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
+                            <p className="text-[11px] text-muted-foreground">
+                              The active mobile number used for this wallet.
+                            </p>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              Account Title *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={editWalletAccountTitle}
+                              onChange={(e) => setEditWalletAccountTitle(e.target.value)}
+                              placeholder="Junior Jinnah Trust"
+                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
+                            <p className="text-[11px] text-muted-foreground">
+                              Name that appears when donors look up this wallet.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Secondary Mobile Wallet Account (Optional) */}
+                      <div className="rounded-xl border border-dashed bg-card p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <input
+                              id="enableSecondaryWallet"
+                              type="checkbox"
+                              checked={showSecondaryWallet}
+                              onChange={(e) => {
+                                setShowSecondaryWallet(e.target.checked);
+                                if (!e.target.checked) {
+                                  setEditWallet2AccountNumber("");
+                                  setEditWallet2AccountTitle("");
+                                  setEditWallet2Providers([]);
+                                }
+                              }}
+                              className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                            />
+                            <label htmlFor="enableSecondaryWallet" className="text-xs font-semibold text-foreground cursor-pointer">
+                              Add Secondary Mobile Wallet (Optional, e.g. for a separate phone number or Raast)
+                            </label>
+                          </div>
+                          {showSecondaryWallet && (
+                            <span className="text-[10px] uppercase font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                              Active
+                            </span>
+                          )}
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            JazzCash / SadaPay Number *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={editJazzcashNumber}
-                            onChange={(e) => setEditJazzcashNumber(e.target.value)}
-                            placeholder="03219519360"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
+                        {showSecondaryWallet && (
+                          <div className="space-y-4 pt-3 border-t">
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                                Secondary Wallet Providers
+                              </label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {MOBILE_WALLET_OPTIONS.map((opt) => {
+                                  const isSelected = editWallet2Providers.includes(opt);
+                                  return (
+                                    <button
+                                      key={`sec-${opt}`}
+                                      type="button"
+                                      onClick={() => {
+                                        if (isSelected) {
+                                          setEditWallet2Providers(editWallet2Providers.filter((p) => p !== opt));
+                                        } else {
+                                          setEditWallet2Providers([...editWallet2Providers, opt]);
+                                        }
+                                      }}
+                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                                        isSelected
+                                          ? "bg-primary text-primary-foreground shadow-xs"
+                                          : "bg-background border border-input text-muted-foreground hover:text-foreground"
+                                      }`}
+                                    >
+                                      {isSelected ? "✓" : "+"} {opt}
+                                    </button>
+                                  );
+                                })}
+                              </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            JazzCash Account Title
-                          </label>
-                          <input
-                            type="text"
-                            value={editJazzcashTitle}
-                            onChange={(e) => setEditJazzcashTitle(e.target.value)}
-                            placeholder="e.g. Junior Jinnah Trust"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
+                              <div className="flex items-center gap-2 pt-1">
+                                <select
+                                  aria-label="Add Secondary Provider"
+                                  className="text-xs rounded-lg border border-input bg-background px-2.5 py-1.5 text-foreground outline-none focus:border-primary"
+                                  value=""
+                                  onChange={(e) => {
+                                    const val = e.target.value.trim();
+                                    if (val && !editWallet2Providers.includes(val)) {
+                                      setEditWallet2Providers([...editWallet2Providers, val]);
+                                    }
+                                    e.target.value = "";
+                                  }}
+                                >
+                                  <option value="">+ Add Provider from Dropdown...</option>
+                                  {MOBILE_WALLET_OPTIONS.map((opt) => (
+                                    <option key={`sec-opt-${opt}`} value={opt} disabled={editWallet2Providers.includes(opt)}>
+                                      {opt} {editWallet2Providers.includes(opt) ? "(Selected)" : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                  Secondary Account Number
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editWallet2AccountNumber}
+                                  onChange={(e) => setEditWallet2AccountNumber(e.target.value)}
+                                  placeholder="03001234567"
+                                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                />
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                  Secondary Account Title
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editWallet2AccountTitle}
+                                  onChange={(e) => setEditWallet2AccountTitle(e.target.value)}
+                                  placeholder="Junior Jinnah Trust"
+                                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1916,9 +2206,19 @@ function AdminPage() {
                           <span className="font-semibold text-foreground truncate max-w-[130px]">{editBankIban}</span>
                         </div>
                         <div className="flex justify-between pt-1 border-t border-emerald-500/10 font-mono">
-                          <span className="text-muted-foreground font-sans">EasyPaisa:</span>
-                          <span className="font-semibold text-foreground">{editEasypaisaNumber}</span>
+                          <span className="text-muted-foreground font-sans truncate max-w-[110px]" title={editWalletProviders.join(", ") || "Wallets"}>
+                            {editWalletProviders.slice(0, 2).join("/") || "Wallet"}:
+                          </span>
+                          <span className="font-semibold text-foreground">{editWalletAccountNumber}</span>
                         </div>
+                        {showSecondaryWallet && editWallet2AccountNumber ? (
+                          <div className="flex justify-between font-mono text-[10px]">
+                            <span className="text-muted-foreground font-sans truncate max-w-[110px]">
+                              {editWallet2Providers.slice(0, 2).join("/") || "Wallet 2"}:
+                            </span>
+                            <span className="font-semibold text-foreground">{editWallet2AccountNumber}</span>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
 

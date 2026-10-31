@@ -39,6 +39,12 @@ export const campaignConfig = pgTable("campaign_config", {
   easypaisa_title: text("easypaisa_title").notNull().default("Junior Jinnah Trust"),
   jazzcash_number: text("jazzcash_number").notNull().default("03219519360"),
   jazzcash_title: text("jazzcash_title").notNull().default("Junior Jinnah Trust"),
+  wallet_providers: text("wallet_providers").notNull().default("EasyPaisa, JazzCash, SadaPay, NayaPay"),
+  wallet_account_number: text("wallet_account_number").notNull().default("03219519360"),
+  wallet_account_title: text("wallet_account_title").notNull().default("Junior Jinnah Trust"),
+  wallet2_providers: text("wallet2_providers").default(""),
+  wallet2_account_number: text("wallet2_account_number").default(""),
+  wallet2_account_title: text("wallet2_account_title").default(""),
   payment_instructions: text("payment_instructions").notNull().default("Please use your name as the transfer reference and upload your receipt screenshot below."),
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
