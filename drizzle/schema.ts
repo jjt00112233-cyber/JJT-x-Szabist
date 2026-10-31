@@ -33,6 +33,7 @@ export const campaignConfig = pgTable("campaign_config", {
   goal: numeric("goal").notNull().default("100000"),
   bank_name: text("bank_name").notNull().default("Meezan Bank"),
   bank_account_title: text("bank_account_title").notNull().default("Junior Jinnah Trust"),
+  bank_identifier_type: text("bank_identifier_type").notNull().default("both"),
   bank_account_number: text("bank_account_number").notNull().default("01010101010101"),
   bank_iban: text("bank_iban").notNull().default("PK00MEZN0001010101010101"),
   easypaisa_number: text("easypaisa_number").notNull().default("03219519360"),

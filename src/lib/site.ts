@@ -6,6 +6,7 @@ export const SITE = {
   goal: 100000,
   bankName: "Meezan Bank",
   bankAccountTitle: "Junior Jinnah Trust",
+  bankIdentifierType: "both" as "both" | "account_only" | "iban_only",
   bankAccountNumber: "01010101010101",
   bankIban: "PK00MEZN0001010101010101",
   easypaisaNumber: "03219519360",

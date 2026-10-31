@@ -13,6 +13,7 @@ export type CampaignConfig = {
   goal: number;
   bankName: string;
   bankAccountTitle: string;
+  bankIdentifierType: "both" | "account_only" | "iban_only";
   bankAccountNumber: string;
   bankIban: string;
   easypaisaNumber: string;
@@ -54,6 +55,7 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
           goal: Number(row.goal) || SITE.goal,
           bankName: row.bank_name || SITE.bankName,
           bankAccountTitle: row.bank_account_title || SITE.bankAccountTitle,
+          bankIdentifierType: (row.bank_identifier_type as "both" | "account_only" | "iban_only") || SITE.bankIdentifierType,
           bankAccountNumber: row.bank_account_number || SITE.bankAccountNumber,
           bankIban: row.bank_iban || SITE.bankIban,
           easypaisaNumber: row.easypaisa_number || SITE.easypaisaNumber,
@@ -88,6 +90,7 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
       goal: SITE.goal,
       bankName: SITE.bankName,
       bankAccountTitle: SITE.bankAccountTitle,
+      bankIdentifierType: SITE.bankIdentifierType,
       bankAccountNumber: SITE.bankAccountNumber,
       bankIban: SITE.bankIban,
       easypaisaNumber: SITE.easypaisaNumber,
@@ -128,6 +131,7 @@ export function useCampaignConfig(): CampaignConfig {
       goal: SITE.goal,
       bankName: SITE.bankName,
       bankAccountTitle: SITE.bankAccountTitle,
+      bankIdentifierType: SITE.bankIdentifierType,
       bankAccountNumber: SITE.bankAccountNumber,
       bankIban: SITE.bankIban,
       easypaisaNumber: SITE.easypaisaNumber,

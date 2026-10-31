@@ -297,6 +297,7 @@ export const getAdminData = createServerFn({ method: "POST" })
           goal: Number(cfg.goal),
           bankName: cfg.bank_name || SITE.bankName,
           bankAccountTitle: cfg.bank_account_title || SITE.bankAccountTitle,
+          bankIdentifierType: (cfg.bank_identifier_type as "both" | "account_only" | "iban_only") || SITE.bankIdentifierType,
           bankAccountNumber: cfg.bank_account_number || SITE.bankAccountNumber,
           bankIban: cfg.bank_iban || SITE.bankIban,
           easypaisaNumber: cfg.easypaisa_number || SITE.easypaisaNumber,
@@ -326,6 +327,7 @@ export const getAdminData = createServerFn({ method: "POST" })
           goal: SITE.goal,
           bankName: SITE.bankName,
           bankAccountTitle: SITE.bankAccountTitle,
+          bankIdentifierType: SITE.bankIdentifierType,
           bankAccountNumber: SITE.bankAccountNumber,
           bankIban: SITE.bankIban,
           easypaisaNumber: SITE.easypaisaNumber,
@@ -429,6 +431,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
       goal: number;
       bank_name?: string;
       bank_account_title?: string;
+      bank_identifier_type?: string;
       bank_account_number?: string;
       bank_iban?: string;
       easypaisa_number?: string;
@@ -463,6 +466,9 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
     const cleanGoal = Number(data.goal) > 0 ? Math.round(Number(data.goal)) : SITE.goal;
     const cleanBankName = (data.bank_name || "").trim() || SITE.bankName;
     const cleanBankAccountTitle = (data.bank_account_title || "").trim() || SITE.bankAccountTitle;
+    const cleanBankIdentifierType = ["both", "account_only", "iban_only"].includes(data.bank_identifier_type || "")
+      ? (data.bank_identifier_type as "both" | "account_only" | "iban_only")
+      : "both";
     const cleanBankAccountNumber = (data.bank_account_number || "").trim() || SITE.bankAccountNumber;
     const cleanBankIban = (data.bank_iban || "").trim() || SITE.bankIban;
     const cleanWalletProviders = (data.wallet_providers || "").trim() || SITE.walletProviders;
@@ -496,6 +502,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         goal: String(cleanGoal),
         bank_name: cleanBankName,
         bank_account_title: cleanBankAccountTitle,
+        bank_identifier_type: cleanBankIdentifierType,
         bank_account_number: cleanBankAccountNumber,
         bank_iban: cleanBankIban,
         easypaisa_number: cleanEasypaisaNumber,
@@ -527,6 +534,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
           goal: String(cleanGoal),
           bank_name: cleanBankName,
           bank_account_title: cleanBankAccountTitle,
+          bank_identifier_type: cleanBankIdentifierType,
           bank_account_number: cleanBankAccountNumber,
           bank_iban: cleanBankIban,
           easypaisa_number: cleanEasypaisaNumber,
@@ -560,6 +568,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         goal: cleanGoal,
         bankName: cleanBankName,
         bankAccountTitle: cleanBankAccountTitle,
+        bankIdentifierType: cleanBankIdentifierType,
         bankAccountNumber: cleanBankAccountNumber,
         bankIban: cleanBankIban,
         easypaisaNumber: cleanEasypaisaNumber,

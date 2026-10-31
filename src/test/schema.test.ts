@@ -44,6 +44,7 @@ describe("Drizzle Schema", () => {
     expect(columns).toHaveProperty("goal");
     expect(columns).toHaveProperty("bank_name");
     expect(columns).toHaveProperty("bank_account_title");
+    expect(columns).toHaveProperty("bank_identifier_type");
     expect(columns).toHaveProperty("bank_account_number");
     expect(columns).toHaveProperty("bank_iban");
     expect(columns).toHaveProperty("easypaisa_number");

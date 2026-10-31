@@ -36,6 +36,7 @@ describe("Contact email and WhatsApp links", () => {
 
   it("has default bank details and social links defined in shared SITE module", () => {
     expect(SITE.bankName).toBeDefined();
+    expect(SITE.bankIdentifierType).toBe("both");
     expect(SITE.bankAccountNumber).toBeDefined();
     expect(SITE.bankIban).toBeDefined();
     expect(SITE.easypaisaNumber).toBeDefined();

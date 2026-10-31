@@ -102,6 +102,9 @@ function AdminPage() {
   const [editConfigGoal, setEditConfigGoal] = useState(String(publicConfig.goal));
   const [editBankName, setEditBankName] = useState(publicConfig.bankName || SITE.bankName);
   const [editBankAccountTitle, setEditBankAccountTitle] = useState(publicConfig.bankAccountTitle || SITE.bankAccountTitle);
+  const [editBankIdentifierType, setEditBankIdentifierType] = useState<"both" | "account_only" | "iban_only">(
+    (publicConfig.bankIdentifierType as "both" | "account_only" | "iban_only") || SITE.bankIdentifierType
+  );
   const [editBankAccountNumber, setEditBankAccountNumber] = useState(publicConfig.bankAccountNumber || SITE.bankAccountNumber);
   const [editBankIban, setEditBankIban] = useState(publicConfig.bankIban || SITE.bankIban);
   const [editEasypaisaNumber, setEditEasypaisaNumber] = useState(publicConfig.easypaisaNumber || SITE.easypaisaNumber);
@@ -170,6 +173,9 @@ function AdminPage() {
       setEditConfigGoal(String(publicConfig.goal));
       setEditBankName(publicConfig.bankName || SITE.bankName);
       setEditBankAccountTitle(publicConfig.bankAccountTitle || SITE.bankAccountTitle);
+      setEditBankIdentifierType(
+        (publicConfig.bankIdentifierType as "both" | "account_only" | "iban_only") || SITE.bankIdentifierType
+      );
       setEditBankAccountNumber(publicConfig.bankAccountNumber || SITE.bankAccountNumber);
       setEditBankIban(publicConfig.bankIban || SITE.bankIban);
       setEditEasypaisaNumber(publicConfig.easypaisaNumber || SITE.easypaisaNumber);
@@ -214,6 +220,7 @@ function AdminPage() {
     publicConfig.goal,
     publicConfig.bankName,
     publicConfig.bankAccountTitle,
+    publicConfig.bankIdentifierType,
     publicConfig.bankAccountNumber,
     publicConfig.bankIban,
     publicConfig.easypaisaNumber,
@@ -312,6 +319,9 @@ function AdminPage() {
         setEditConfigGoal(String(res.campaignConfig.goal));
         setEditBankName(res.campaignConfig.bankName || SITE.bankName);
         setEditBankAccountTitle(res.campaignConfig.bankAccountTitle || SITE.bankAccountTitle);
+        setEditBankIdentifierType(
+          (res.campaignConfig.bankIdentifierType as "both" | "account_only" | "iban_only") || SITE.bankIdentifierType
+        );
         setEditBankAccountNumber(res.campaignConfig.bankAccountNumber || SITE.bankAccountNumber);
         setEditBankIban(res.campaignConfig.bankIban || SITE.bankIban);
         setEditEasypaisaNumber(res.campaignConfig.easypaisaNumber || SITE.easypaisaNumber);
@@ -602,6 +612,7 @@ function AdminPage() {
           goal: Math.round(numGoal),
           bank_name: editBankName.trim(),
           bank_account_title: editBankAccountTitle.trim(),
+          bank_identifier_type: editBankIdentifierType,
           bank_account_number: editBankAccountNumber.trim(),
           bank_iban: editBankIban.trim(),
           easypaisa_number: editWalletAccountNumber.trim() || editEasypaisaNumber.trim(),
@@ -648,6 +659,9 @@ function AdminPage() {
     setEditConfigGoal(String(config.goal));
     setEditBankName(config.bankName || SITE.bankName);
     setEditBankAccountTitle(config.bankAccountTitle || SITE.bankAccountTitle);
+    setEditBankIdentifierType(
+      (config.bankIdentifierType as "both" | "account_only" | "iban_only") || SITE.bankIdentifierType
+    );
     setEditBankAccountNumber(config.bankAccountNumber || SITE.bankAccountNumber);
     setEditBankIban(config.bankIban || SITE.bankIban);
     setEditEasypaisaNumber(config.easypaisaNumber || SITE.easypaisaNumber);
@@ -1981,33 +1995,61 @@ function AdminPage() {
                           />
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            Account Number *
+                        {/* Account Number / IBAN Format Dropdown */}
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center justify-between">
+                            <span>Account Details Format (Select IBAN, Account No, or Both) *</span>
+                            <span className="text-[10px] text-muted-foreground font-normal lowercase">
+                              {editBankIdentifierType === "both" ? "showing both fields" : editBankIdentifierType === "account_only" ? "account number only" : "iban only"}
+                            </span>
                           </label>
-                          <input
-                            type="text"
-                            required
-                            value={editBankAccountNumber}
-                            onChange={(e) => setEditBankAccountNumber(e.target.value)}
-                            placeholder="e.g. 01010101010101"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
+                          <select
+                            value={editBankIdentifierType}
+                            onChange={(e) => setEditBankIdentifierType(e.target.value as "both" | "account_only" | "iban_only")}
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          >
+                            <option value="both">Both (Account Number & IBAN) – Show Both Fields</option>
+                            <option value="account_only">Account Number Only – Show Account Number Field</option>
+                            <option value="iban_only">IBAN Only – Show IBAN Field</option>
+                          </select>
+                          <p className="text-[11px] text-muted-foreground">
+                            Choose whether to show donors only the Bank Account Number, only the IBAN, or both account identifiers.
+                          </p>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            IBAN (International / Raast) *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={editBankIban}
-                            onChange={(e) => setEditBankIban(e.target.value)}
-                            placeholder="e.g. PK00MEZN0001010101010101"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
+                        {/* Account Number Input (shown when 'both' or 'account_only') */}
+                        {(editBankIdentifierType === "both" || editBankIdentifierType === "account_only") && (
+                          <div className={`space-y-1.5 ${editBankIdentifierType === "account_only" ? "sm:col-span-2" : ""}`}>
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              Account Number *
+                            </label>
+                            <input
+                              type="text"
+                              required={editBankIdentifierType === "both" || editBankIdentifierType === "account_only"}
+                              value={editBankAccountNumber}
+                              onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                              placeholder="e.g. 01010101010101"
+                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
+                          </div>
+                        )}
+
+                        {/* IBAN Input (shown when 'both' or 'iban_only') */}
+                        {(editBankIdentifierType === "both" || editBankIdentifierType === "iban_only") && (
+                          <div className={`space-y-1.5 ${editBankIdentifierType === "iban_only" ? "sm:col-span-2" : ""}`}>
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              IBAN (International / Raast) *
+                            </label>
+                            <input
+                              type="text"
+                              required={editBankIdentifierType === "both" || editBankIdentifierType === "iban_only"}
+                              value={editBankIban}
+                              onChange={(e) => setEditBankIban(e.target.value)}
+                              placeholder="e.g. PK00MEZN0001010101010101"
+                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -2414,14 +2456,18 @@ function AdminPage() {
                               <span className="text-muted-foreground">Title:</span>
                               <span className="font-semibold text-foreground">{editBankAccountTitle}</span>
                             </div>
-                            <div className="flex justify-between font-mono">
-                              <span className="text-muted-foreground font-sans">A/C:</span>
-                              <span className="font-semibold text-foreground">{editBankAccountNumber}</span>
-                            </div>
-                            <div className="flex justify-between font-mono">
-                              <span className="text-muted-foreground font-sans">IBAN:</span>
-                              <span className="font-semibold text-foreground truncate max-w-[130px]">{editBankIban}</span>
-                            </div>
+                            {(editBankIdentifierType === "both" || editBankIdentifierType === "account_only") && (
+                              <div className="flex justify-between font-mono">
+                                <span className="text-muted-foreground font-sans">A/C:</span>
+                                <span className="font-semibold text-foreground">{editBankAccountNumber}</span>
+                              </div>
+                            )}
+                            {(editBankIdentifierType === "both" || editBankIdentifierType === "iban_only") && (
+                              <div className="flex justify-between font-mono">
+                                <span className="text-muted-foreground font-sans">IBAN:</span>
+                                <span className="font-semibold text-foreground truncate max-w-[130px]">{editBankIban}</span>
+                              </div>
+                            )}
                           </>
                         )}
 

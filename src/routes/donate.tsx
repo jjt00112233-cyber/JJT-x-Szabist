@@ -251,8 +251,12 @@ function Donate() {
                   <div className="space-y-0.5">
                     <span className="text-muted-foreground block text-[10px] uppercase">Bank Transfer</span>
                     <span className="font-semibold text-foreground block">{config.bankName}</span>
-                    <span className="font-mono text-foreground block">A/C: {config.bankAccountNumber}</span>
-                    <span className="font-mono text-muted-foreground text-[11px] block truncate">IBAN: {config.bankIban}</span>
+                    {config.bankIdentifierType !== "iban_only" && (
+                      <span className="font-mono text-foreground block">A/C: {config.bankAccountNumber}</span>
+                    )}
+                    {config.bankIdentifierType !== "account_only" && (
+                      <span className="font-mono text-muted-foreground text-[11px] block truncate">IBAN: {config.bankIban}</span>
+                    )}
                   </div>
                 )}
                 {showWallet && (
@@ -326,21 +330,25 @@ function Donate() {
                         <span className="font-bold text-foreground text-sm">{config.bankAccountTitle}</span>
                       </div>
 
-                      <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
-                        <div>
-                          <span className="text-[10px] uppercase font-semibold text-muted-foreground block">Account Number</span>
-                          <span className="font-mono font-bold text-foreground text-sm">{config.bankAccountNumber}</span>
+                      {config.bankIdentifierType !== "iban_only" && (
+                        <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                          <div>
+                            <span className="text-[10px] uppercase font-semibold text-muted-foreground block">Account Number</span>
+                            <span className="font-mono font-bold text-foreground text-sm">{config.bankAccountNumber}</span>
+                          </div>
+                          <CopyButton text={config.bankAccountNumber} label="Account Number" />
                         </div>
-                        <CopyButton text={config.bankAccountNumber} label="Account Number" />
-                      </div>
+                      )}
 
-                      <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
-                        <div className="min-w-0 pr-2">
-                          <span className="text-[10px] uppercase font-semibold text-muted-foreground block">IBAN Number</span>
-                          <span className="font-mono font-bold text-foreground text-xs block truncate">{config.bankIban}</span>
+                      {config.bankIdentifierType !== "account_only" && (
+                        <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                          <div className="min-w-0 pr-2">
+                            <span className="text-[10px] uppercase font-semibold text-muted-foreground block">IBAN Number</span>
+                            <span className="font-mono font-bold text-foreground text-xs block truncate">{config.bankIban}</span>
+                          </div>
+                          <CopyButton text={config.bankIban} label="IBAN Number" />
                         </div>
-                        <CopyButton text={config.bankIban} label="IBAN Number" />
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -526,7 +534,9 @@ function Donate() {
                 ) : (
                   <>
                     If you have already sent funds via Online Banking ({config.bankName}) to{" "}
-                    <strong className="text-foreground font-semibold">{config.bankAccountNumber}</strong>, upload a screenshot here for fast verification.
+                    <strong className="text-foreground font-semibold">
+                      {config.bankIdentifierType === "iban_only" ? config.bankIban : config.bankAccountNumber}
+                    </strong>, upload a screenshot here for fast verification.
                   </>
                 )}
               </p>
@@ -534,10 +544,18 @@ function Donate() {
                 {showBank && (
                   <>
                     <span>Bank: <strong className="text-foreground">{config.bankName}</strong></span>
-                    <span>•</span>
-                    <span>A/C: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankAccountNumber}</code></span>
-                    <span>•</span>
-                    <span>IBAN: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankIban}</code></span>
+                    {config.bankIdentifierType !== "iban_only" && (
+                      <>
+                        <span>•</span>
+                        <span>A/C: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankAccountNumber}</code></span>
+                      </>
+                    )}
+                    {config.bankIdentifierType !== "account_only" && (
+                      <>
+                        <span>•</span>
+                        <span>IBAN: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankIban}</code></span>
+                      </>
+                    )}
                   </>
                 )}
                 {showBank && showWallet && <span>•</span>}
