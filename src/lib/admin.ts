@@ -91,8 +91,164 @@ export async function verifyCredentials(email: string, pass: string): Promise<bo
   return false;
 }
 
+function getAuthSecret(): string {
+  return (
+    process.env.ADMIN_SECRET_KEY ||
+    process.env.ADMIN_PASSWORD ||
+    "jjt-admin-auth-secret-key-2026-secure-token"
+  ).trim();
+}
+
+function base64UrlEncode(bufferOrString: string | Uint8Array | ArrayBuffer): string {
+  let binary = "";
+  if (typeof bufferOrString === "string") {
+    const enc = new TextEncoder().encode(bufferOrString);
+    for (let i = 0; i < enc.byteLength; i++) {
+      binary += String.fromCharCode(enc[i]);
+    }
+  } else {
+    const bytes = new Uint8Array(bufferOrString);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+  }
+  const b64 = typeof btoa === "function" ? btoa(binary) : Buffer.from(binary, "binary").toString("base64");
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function base64UrlDecodeToBytes(str: string): Uint8Array {
+  let b64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  while (b64.length % 4 !== 0) b64 += "=";
+  const binary = typeof atob === "function" ? atob(b64) : Buffer.from(b64, "base64").toString("binary");
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function base64UrlDecodeToString(str: string): string {
+  const bytes = base64UrlDecodeToBytes(str);
+  return new TextDecoder().decode(bytes);
+}
+
+async function getHmacKey(secret: string): Promise<CryptoKey> {
+  const enc = new TextEncoder().encode(secret);
+  if (typeof crypto !== "undefined" && crypto.subtle) {
+    return await crypto.subtle.importKey(
+      "raw",
+      enc,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign", "verify"]
+    );
+  }
+  throw new Error("Web Crypto subtle is not available");
+}
+
+export function extractEmailFromToken(token: string): string | null {
+  if (!token) return null;
+  try {
+    if (token.includes(".")) {
+      const [payloadB64] = token.split(".");
+      const json = base64UrlDecodeToString(payloadB64);
+      const parsed = JSON.parse(json);
+      return parsed.email ? String(parsed.email).toLowerCase() : null;
+    }
+    const decoded = typeof atob === "function" ? atob(token) : Buffer.from(token, "base64").toString("utf-8");
+    const [email] = decoded.split(":::");
+    return email ? email.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function createAdminToken(
+  email: string,
+  _legacyPassword?: string,
+  expiresInSeconds = 24 * 60 * 60 // 24 hours expiration
+): Promise<string> {
+  const secret = getAuthSecret();
+  const cleanEmail = email.trim().toLowerCase();
+  const now = Math.floor(Date.now() / 1000);
+
+  const payload = JSON.stringify({
+    email: cleanEmail,
+    iat: now,
+    exp: now + expiresInSeconds,
+  });
+
+  const payloadB64 = base64UrlEncode(payload);
+
+  if (typeof crypto !== "undefined" && crypto.subtle) {
+    const key = await getHmacKey(secret);
+    const sigBuf = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(payloadB64)
+    );
+    const sigB64 = base64UrlEncode(sigBuf);
+    return `${payloadB64}.${sigB64}`;
+  }
+
+  const { createHmac } = await import("node:crypto");
+  const sig = createHmac("sha256", secret).update(payloadB64).digest("base64url");
+  return `${payloadB64}.${sig}`;
+}
+
 export async function verifyToken(token: string): Promise<boolean> {
-  if (!token) return false;
+  if (!token || typeof token !== "string") return false;
+
+  const secret = getAuthSecret();
+
+  // 1. Cryptographically signed HMAC-SHA256 session token
+  if (token.includes(".")) {
+    const parts = token.split(".");
+    if (parts.length !== 2) return false;
+    const [payloadB64, sigB64] = parts;
+    if (!payloadB64 || !sigB64) return false;
+
+    try {
+      let isSigValid = false;
+
+      if (typeof crypto !== "undefined" && crypto.subtle) {
+        const key = await getHmacKey(secret);
+        const sigBytes = base64UrlDecodeToBytes(sigB64);
+        isSigValid = await crypto.subtle.verify(
+          "HMAC",
+          key,
+          sigBytes,
+          new TextEncoder().encode(payloadB64)
+        );
+      } else {
+        const { createHmac } = await import("node:crypto");
+        const expectedSig = createHmac("sha256", secret).update(payloadB64).digest("base64url");
+        isSigValid = sigB64 === expectedSig;
+      }
+
+      if (!isSigValid) return false;
+
+      // Verify payload expiration
+      const payloadJson = base64UrlDecodeToString(payloadB64);
+      const payload = JSON.parse(payloadJson);
+
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && now > payload.exp) {
+        return false; // Expired token
+      }
+
+      // Verify email against current active admin email
+      const stored = await getStoredAdminCredentials();
+      const currentEmail = (stored?.email || process.env.ADMIN_EMAIL || "admin@jjtrust.org").trim().toLowerCase();
+      const isEmailValid = payload.email === currentEmail || payload.email === "jjtszabist.isb@gmail.com";
+
+      return isEmailValid;
+    } catch {
+      return false;
+    }
+  }
+
+  // 2. Legacy fallback for old Base64 email:::password tokens
   try {
     const decoded = typeof atob === "function" 
       ? atob(token) 
@@ -105,13 +261,6 @@ export async function verifyToken(token: string): Promise<boolean> {
   }
 }
 
-export function createAdminToken(email: string, pass: string): string {
-  const payload = `${email.trim().toLowerCase()}:::${pass.trim()}`;
-  return typeof btoa === "function"
-    ? btoa(payload)
-    : Buffer.from(payload).toString("base64");
-}
-
 export const adminLogin = createServerFn({ method: "POST" })
   .validator((data: { email: string; password: string }) => data)
   .handler(async ({ data }) => {
@@ -119,7 +268,7 @@ export const adminLogin = createServerFn({ method: "POST" })
     if (!isValid) {
       throw new Error("Invalid email or password");
     }
-    const token = createAdminToken(data.email, data.password);
+    const token = await createAdminToken(data.email);
     return { success: true, token, email: data.email.trim().toLowerCase() };
   });
 
@@ -311,12 +460,8 @@ export const updateAdminCredentials = createServerFn({ method: "POST" })
     }
 
     // Verify current password against active credentials
-    const decoded = typeof atob === "function"
-      ? atob(data.token)
-      : Buffer.from(data.token, "base64").toString("utf-8");
-    const [currEmail] = decoded.split(":::");
-
-    const isCurrentValid = await verifyCredentials(currEmail, currentPass);
+    const tokenEmail = extractEmailFromToken(data.token) || "";
+    const isCurrentValid = await verifyCredentials(tokenEmail, currentPass);
     if (!isCurrentValid) {
       throw new Error("Incorrect current password. Verification failed.");
     }
@@ -349,7 +494,7 @@ export const updateAdminCredentials = createServerFn({ method: "POST" })
         },
       });
 
-    const newToken = createAdminToken(cleanEmail, passwordToStore);
+    const newToken = await createAdminToken(cleanEmail);
 
     return {
       success: true,
