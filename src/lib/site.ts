@@ -22,6 +22,7 @@ export const SITE = {
   facebookUrl: "https://www.facebook.com/thejuniorjinnahtrust",
   instagramUrl: "https://www.instagram.com/jinnahjuniortrust/",
   linkedinUrl: "https://www.linkedin.com/company/54089173/",
+  whatsappNumber: "03219519360",
   whatsappUrl: "https://wa.link/tue7xa",
   paymentInstructions: "Please use your name as the transfer reference and upload your receipt screenshot below.",
 };
@@ -45,15 +46,21 @@ export function gmailComposeUrl(email?: string) {
   return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetEmail)}`;
 }
 
-export function formatWhatsAppUrl(phone?: string) {
-  const clean = (phone || SITE.donationPhone).replace(/[^0-9]/g, "");
+export function formatWhatsAppUrl(input?: string) {
+  const val = (input || SITE.whatsappNumber || SITE.donationPhone).trim();
+  if (val.startsWith("http://") || val.startsWith("https://")) {
+    return val;
+  }
+  const clean = val.replace(/[^0-9]/g, "");
   const intl = clean.startsWith("0") ? "92" + clean.slice(1) : clean.startsWith("92") ? clean : "92" + clean;
   return `https://wa.me/${intl}`;
 }
 
-export function getWhatsAppUrl(customUrl?: string, phone?: string) {
-  if (customUrl && customUrl.trim()) return customUrl.trim();
-  return formatWhatsAppUrl(phone || SITE.donationPhone);
+export function getWhatsAppUrl(customUrlOrNumber?: string, phone?: string) {
+  if (customUrlOrNumber && customUrlOrNumber.trim()) {
+    return formatWhatsAppUrl(customUrlOrNumber);
+  }
+  return formatWhatsAppUrl(phone || SITE.whatsappNumber || SITE.donationPhone);
 }
 
 export const SUGGESTED_CONTRIBUTIONS = [

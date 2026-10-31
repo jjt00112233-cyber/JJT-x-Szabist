@@ -47,7 +47,7 @@ import {
 } from "@/lib/admin";
 import { uploadPaymentScreenshot } from "@/lib/upload";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { SITE, formatRs, useCampaignConfig, MOBILE_WALLET_OPTIONS, type CampaignConfig } from "@/lib/site";
+import { SITE, formatRs, useCampaignConfig, MOBILE_WALLET_OPTIONS, formatWhatsAppUrl, type CampaignConfig } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
@@ -141,7 +141,9 @@ function AdminPage() {
   const [editFacebookUrl, setEditFacebookUrl] = useState(publicConfig.facebookUrl || SITE.facebookUrl);
   const [editInstagramUrl, setEditInstagramUrl] = useState(publicConfig.instagramUrl || SITE.instagramUrl);
   const [editLinkedinUrl, setEditLinkedinUrl] = useState(publicConfig.linkedinUrl || SITE.linkedinUrl);
-  const [editWhatsappUrl, setEditWhatsappUrl] = useState(publicConfig.whatsappUrl || SITE.whatsappUrl);
+  const [editWhatsappNumber, setEditWhatsappNumber] = useState(
+    publicConfig.whatsappNumber || publicConfig.donationPhone || SITE.whatsappNumber
+  );
   const [editPaymentInstructions, setEditPaymentInstructions] = useState(publicConfig.paymentInstructions || SITE.paymentInstructions);
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -201,7 +203,7 @@ function AdminPage() {
       setEditFacebookUrl(publicConfig.facebookUrl || SITE.facebookUrl);
       setEditInstagramUrl(publicConfig.instagramUrl || SITE.instagramUrl);
       setEditLinkedinUrl(publicConfig.linkedinUrl || SITE.linkedinUrl);
-      setEditWhatsappUrl(publicConfig.whatsappUrl || SITE.whatsappUrl);
+      setEditWhatsappNumber(publicConfig.whatsappNumber || publicConfig.donationPhone || SITE.whatsappNumber);
       setEditPaymentInstructions(publicConfig.paymentInstructions || SITE.paymentInstructions);
     }
   }, [
@@ -228,6 +230,7 @@ function AdminPage() {
     publicConfig.facebookUrl,
     publicConfig.instagramUrl,
     publicConfig.linkedinUrl,
+    publicConfig.whatsappNumber,
     publicConfig.whatsappUrl,
     publicConfig.paymentInstructions,
   ]);
@@ -342,7 +345,9 @@ function AdminPage() {
         setEditFacebookUrl(res.campaignConfig.facebookUrl || SITE.facebookUrl);
         setEditInstagramUrl(res.campaignConfig.instagramUrl || SITE.instagramUrl);
         setEditLinkedinUrl(res.campaignConfig.linkedinUrl || SITE.linkedinUrl);
-        setEditWhatsappUrl(res.campaignConfig.whatsappUrl || SITE.whatsappUrl);
+        setEditWhatsappNumber(
+          res.campaignConfig.whatsappNumber || res.campaignConfig.donationPhone || SITE.whatsappNumber
+        );
         setEditPaymentInstructions(res.campaignConfig.paymentInstructions || SITE.paymentInstructions);
       }
       if (res.adminEmail) {
@@ -613,7 +618,8 @@ function AdminPage() {
           facebook_url: editFacebookUrl.trim(),
           instagram_url: editInstagramUrl.trim(),
           linkedin_url: editLinkedinUrl.trim(),
-          whatsapp_url: editWhatsappUrl.trim(),
+          whatsapp_number: editWhatsappNumber.trim(),
+          whatsapp_url: formatWhatsAppUrl(editWhatsappNumber.trim()),
           payment_instructions: editPaymentInstructions.trim(),
         },
       });
@@ -669,7 +675,7 @@ function AdminPage() {
     setEditFacebookUrl(config.facebookUrl || SITE.facebookUrl);
     setEditInstagramUrl(config.instagramUrl || SITE.instagramUrl);
     setEditLinkedinUrl(config.linkedinUrl || SITE.linkedinUrl);
-    setEditWhatsappUrl(config.whatsappUrl || SITE.whatsappUrl);
+    setEditWhatsappNumber(config.whatsappNumber || config.donationPhone || SITE.whatsappNumber);
     setEditPaymentInstructions(config.paymentInstructions || SITE.paymentInstructions);
     toast.info("Form reset to currently saved configuration.");
   }
@@ -1790,22 +1796,30 @@ function AdminPage() {
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {/* WhatsApp Link */}
+                        {/* WhatsApp Number */}
                         <div className="space-y-1.5 sm:col-span-2">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                            WhatsApp Direct Link / Chat URL *
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center justify-between">
+                            <span className="flex items-center gap-1.5">
+                              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                              WhatsApp Official Number *
+                            </span>
+                            <span className="text-[10px] lowercase font-mono text-muted-foreground">
+                              Link: {formatWhatsAppUrl(editWhatsappNumber)}
+                            </span>
                           </label>
-                          <input
-                            type="text"
-                            required
-                            value={editWhatsappUrl}
-                            onChange={(e) => setEditWhatsappUrl(e.target.value)}
-                            placeholder="https://wa.link/tue7xa or https://wa.me/923219519360"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-2.5 h-4 w-4 text-emerald-500" />
+                            <input
+                              type="tel"
+                              required
+                              value={editWhatsappNumber}
+                              onChange={(e) => setEditWhatsappNumber(e.target.value)}
+                              placeholder="03219519360"
+                              className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
+                          </div>
                           <p className="text-[11px] text-muted-foreground">
-                            Controls the "Chat on WhatsApp" links in the header, footer, and contact section.
+                            Enter your WhatsApp mobile number (e.g. <code>03219519360</code>). Chat links (<code>{formatWhatsAppUrl(editWhatsappNumber)}</code>) are generated automatically for header, footer, and contact buttons.
                           </p>
                         </div>
 
@@ -2371,7 +2385,7 @@ function AdminPage() {
                       </div>
                       <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-medium truncate">
                         <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="truncate text-[11px]">WhatsApp: {editWhatsappUrl || "wa.link"}</span>
+                        <span className="truncate text-[11px]">WhatsApp: {editWhatsappNumber || "03219519360"}</span>
                       </div>
                     </div>
 

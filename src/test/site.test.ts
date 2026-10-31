@@ -42,6 +42,7 @@ describe("Contact email and WhatsApp links", () => {
     expect(SITE.facebookUrl).toBeDefined();
     expect(SITE.instagramUrl).toBeDefined();
     expect(SITE.linkedinUrl).toBeDefined();
+    expect(SITE.whatsappNumber).toBeDefined();
     expect(SITE.whatsappUrl).toBeDefined();
   });
 });

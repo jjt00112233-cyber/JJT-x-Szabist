@@ -58,6 +58,7 @@ describe("Drizzle Schema", () => {
     expect(columns).toHaveProperty("facebook_url");
     expect(columns).toHaveProperty("instagram_url");
     expect(columns).toHaveProperty("linkedin_url");
+    expect(columns).toHaveProperty("whatsapp_number");
     expect(columns).toHaveProperty("whatsapp_url");
     expect(columns).toHaveProperty("payment_instructions");
   });

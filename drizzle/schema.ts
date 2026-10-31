@@ -49,6 +49,7 @@ export const campaignConfig = pgTable("campaign_config", {
   facebook_url: text("facebook_url").notNull().default("https://www.facebook.com/thejuniorjinnahtrust"),
   instagram_url: text("instagram_url").notNull().default("https://www.instagram.com/jinnahjuniortrust/"),
   linkedin_url: text("linkedin_url").notNull().default("https://www.linkedin.com/company/54089173/"),
+  whatsapp_number: text("whatsapp_number").notNull().default("03219519360"),
   whatsapp_url: text("whatsapp_url").notNull().default("https://wa.link/tue7xa"),
   payment_instructions: text("payment_instructions").notNull().default("Please use your name as the transfer reference and upload your receipt screenshot below."),
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

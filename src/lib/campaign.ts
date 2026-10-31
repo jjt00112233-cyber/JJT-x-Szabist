@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "@/lib/db";
 import { campaignConfig } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
-import { SITE } from "./site";
+import { SITE, formatWhatsAppUrl } from "./site";
 
 export type CampaignConfig = {
   name: string;
@@ -29,6 +29,7 @@ export type CampaignConfig = {
   facebookUrl: string;
   instagramUrl: string;
   linkedinUrl: string;
+  whatsappNumber: string;
   whatsappUrl: string;
   paymentInstructions: string;
   updatedAt?: string;
@@ -69,7 +70,8 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
           facebookUrl: row.facebook_url || SITE.facebookUrl,
           instagramUrl: row.instagram_url || SITE.instagramUrl,
           linkedinUrl: row.linkedin_url || SITE.linkedinUrl,
-          whatsappUrl: row.whatsapp_url || SITE.whatsappUrl,
+          whatsappNumber: row.whatsapp_number || row.donation_phone || SITE.whatsappNumber,
+          whatsappUrl: row.whatsapp_url || formatWhatsAppUrl(row.whatsapp_number || row.donation_phone || SITE.whatsappNumber),
           paymentInstructions: row.payment_instructions || SITE.paymentInstructions,
           updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
         };
@@ -102,7 +104,8 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
       facebookUrl: SITE.facebookUrl,
       instagramUrl: SITE.instagramUrl,
       linkedinUrl: SITE.linkedinUrl,
-      whatsappUrl: SITE.whatsappUrl,
+      whatsappNumber: SITE.whatsappNumber,
+      whatsappUrl: formatWhatsAppUrl(SITE.whatsappNumber),
       paymentInstructions: SITE.paymentInstructions,
     };
   }
@@ -141,7 +144,8 @@ export function useCampaignConfig(): CampaignConfig {
       facebookUrl: SITE.facebookUrl,
       instagramUrl: SITE.instagramUrl,
       linkedinUrl: SITE.linkedinUrl,
-      whatsappUrl: SITE.whatsappUrl,
+      whatsappNumber: SITE.whatsappNumber,
+      whatsappUrl: formatWhatsAppUrl(SITE.whatsappNumber),
       paymentInstructions: SITE.paymentInstructions,
     }
   );

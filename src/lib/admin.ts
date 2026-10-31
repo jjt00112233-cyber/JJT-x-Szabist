@@ -313,7 +313,8 @@ export const getAdminData = createServerFn({ method: "POST" })
           facebookUrl: cfg.facebook_url || SITE.facebookUrl,
           instagramUrl: cfg.instagram_url || SITE.instagramUrl,
           linkedinUrl: cfg.linkedin_url || SITE.linkedinUrl,
-          whatsappUrl: cfg.whatsapp_url || SITE.whatsappUrl,
+          whatsappNumber: cfg.whatsapp_number || cfg.donation_phone || SITE.whatsappNumber,
+          whatsappUrl: cfg.whatsapp_url || formatWhatsAppUrl(cfg.whatsapp_number || cfg.donation_phone || SITE.whatsappNumber),
           paymentInstructions: cfg.payment_instructions || SITE.paymentInstructions,
           updatedAt: cfg.updated_at ? new Date(cfg.updated_at).toISOString() : undefined,
         }
@@ -341,7 +342,8 @@ export const getAdminData = createServerFn({ method: "POST" })
           facebookUrl: SITE.facebookUrl,
           instagramUrl: SITE.instagramUrl,
           linkedinUrl: SITE.linkedinUrl,
-          whatsappUrl: SITE.whatsappUrl,
+          whatsappNumber: SITE.whatsappNumber,
+          whatsappUrl: formatWhatsAppUrl(SITE.whatsappNumber),
           paymentInstructions: SITE.paymentInstructions,
         };
 
@@ -443,6 +445,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
       facebook_url?: string;
       instagram_url?: string;
       linkedin_url?: string;
+      whatsapp_number?: string;
       whatsapp_url?: string;
       payment_instructions?: string;
     }) => data
@@ -478,7 +481,8 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
     const cleanFacebookUrl = (data.facebook_url || "").trim() || SITE.facebookUrl;
     const cleanInstagramUrl = (data.instagram_url || "").trim() || SITE.instagramUrl;
     const cleanLinkedinUrl = (data.linkedin_url || "").trim() || SITE.linkedinUrl;
-    const cleanWhatsappUrl = (data.whatsapp_url || "").trim() || SITE.whatsappUrl;
+    const cleanWhatsappNumber = (data.whatsapp_number || data.donation_phone || "").trim() || cleanPhone;
+    const cleanWhatsappUrl = formatWhatsAppUrl(cleanWhatsappNumber);
     const cleanPaymentInstructions = (data.payment_instructions || "").trim() || SITE.paymentInstructions;
 
     await db
@@ -508,6 +512,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         facebook_url: cleanFacebookUrl,
         instagram_url: cleanInstagramUrl,
         linkedin_url: cleanLinkedinUrl,
+        whatsapp_number: cleanWhatsappNumber,
         whatsapp_url: cleanWhatsappUrl,
         payment_instructions: cleanPaymentInstructions,
         updated_at: new Date(),
@@ -538,6 +543,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
           facebook_url: cleanFacebookUrl,
           instagram_url: cleanInstagramUrl,
           linkedin_url: cleanLinkedinUrl,
+          whatsapp_number: cleanWhatsappNumber,
           whatsapp_url: cleanWhatsappUrl,
           payment_instructions: cleanPaymentInstructions,
           updated_at: new Date(),
@@ -570,6 +576,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         facebookUrl: cleanFacebookUrl,
         instagramUrl: cleanInstagramUrl,
         linkedinUrl: cleanLinkedinUrl,
+        whatsappNumber: cleanWhatsappNumber,
         whatsappUrl: cleanWhatsappUrl,
         paymentInstructions: cleanPaymentInstructions,
       },
