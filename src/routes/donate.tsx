@@ -87,6 +87,8 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
 
 function Donate() {
   const config = useCampaignConfig();
+  const showBank = config.paymentDisplayMode !== "wallet_only";
+  const showWallet = config.paymentDisplayMode !== "bank_only";
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
@@ -242,23 +244,27 @@ function Donate() {
             {/* Quick reference of bank details on completed pledge screen */}
             <div className="mt-6 rounded-xl border bg-muted/40 p-4 text-xs text-left space-y-2">
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Official Bank & Payment Information
+                Official Payment Information
               </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="space-y-0.5">
-                  <span className="text-muted-foreground block text-[10px] uppercase">Bank Transfer</span>
-                  <span className="font-semibold text-foreground block">{config.bankName}</span>
-                  <span className="font-mono text-foreground block">A/C: {config.bankAccountNumber}</span>
-                  <span className="font-mono text-muted-foreground text-[11px] block truncate">IBAN: {config.bankIban}</span>
-                </div>
-                <div className="space-y-0.5">
-                  <span className="text-muted-foreground block text-[10px] uppercase">Mobile Wallets ({config.walletProviders || "EasyPaisa / JazzCash"})</span>
-                  <span className="font-semibold text-foreground block">A/C: {config.walletAccountNumber || config.easypaisaNumber}</span>
-                  {config.wallet2AccountNumber ? (
-                    <span className="font-semibold text-foreground block">{config.wallet2Providers || "Wallet 2"}: {config.wallet2AccountNumber}</span>
-                  ) : null}
-                  <span className="text-muted-foreground text-[11px] block">Title: {config.walletAccountTitle || config.bankAccountTitle}</span>
-                </div>
+              <div className={`grid gap-2 ${showBank && showWallet ? "sm:grid-cols-2" : ""}`}>
+                {showBank && (
+                  <div className="space-y-0.5">
+                    <span className="text-muted-foreground block text-[10px] uppercase">Bank Transfer</span>
+                    <span className="font-semibold text-foreground block">{config.bankName}</span>
+                    <span className="font-mono text-foreground block">A/C: {config.bankAccountNumber}</span>
+                    <span className="font-mono text-muted-foreground text-[11px] block truncate">IBAN: {config.bankIban}</span>
+                  </div>
+                )}
+                {showWallet && (
+                  <div className="space-y-0.5">
+                    <span className="text-muted-foreground block text-[10px] uppercase">Mobile Wallets ({config.walletProviders || "EasyPaisa / JazzCash"})</span>
+                    <span className="font-semibold text-foreground block">A/C: {config.walletAccountNumber || config.easypaisaNumber}</span>
+                    {config.wallet2AccountNumber ? (
+                      <span className="font-semibold text-foreground block">{config.wallet2Providers || "Wallet 2"}: {config.wallet2AccountNumber}</span>
+                    ) : null}
+                    <span className="text-muted-foreground text-[11px] block">Title: {config.walletAccountTitle || config.bankAccountTitle}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -273,10 +279,26 @@ function Donate() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
                 <div>
                   <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <Building className="h-5 w-5 text-primary" /> Official Payment & Bank Accounts
+                    {showBank && showWallet ? (
+                      <>
+                        <Building className="h-5 w-5 text-primary" /> Official Payment & Bank Accounts
+                      </>
+                    ) : showWallet ? (
+                      <>
+                        <Wallet className="h-5 w-5 text-emerald-600" /> Official Mobile Wallet Account
+                      </>
+                    ) : (
+                      <>
+                        <Building className="h-5 w-5 text-primary" /> Official Bank Account
+                      </>
+                    )}
                   </h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Send your donation directly via Online Banking or Mobile Wallets ({config.walletProviders || "EasyPaisa, JazzCash, SadaPay, NayaPay"}).
+                    {showBank && showWallet
+                      ? `Send your donation directly via Online Banking or Mobile Wallets (${config.walletProviders || "EasyPaisa, JazzCash, SadaPay, NayaPay"}).`
+                      : showWallet
+                      ? `Send your donation directly via ${config.walletProviders || "Mobile Wallets (EasyPaisa, JazzCash, SadaPay)"}.`
+                      : `Send your donation directly via Online Banking / Raast (${config.bankName}).`}
                   </p>
                 </div>
                 <span className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
@@ -285,126 +307,82 @@ function Donate() {
                 </span>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2 mt-5">
+              <div className={`grid gap-5 mt-5 ${showBank && showWallet ? "sm:grid-cols-2" : "max-w-xl mx-auto"}`}>
                 {/* Bank Transfer Box */}
-                <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                      <CreditCard className="h-4 w-4" /> Bank Account (Online / Raast)
-                    </span>
-                    <span className="text-[11px] font-semibold text-foreground bg-background px-2 py-0.5 rounded border">
-                      {config.bankName}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 text-xs">
-                    <div>
-                      <span className="text-muted-foreground block text-[11px]">Account Title</span>
-                      <span className="font-bold text-foreground text-sm">{config.bankAccountTitle}</span>
+                {showBank && (
+                  <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                        <CreditCard className="h-4 w-4" /> Bank Account (Online / Raast)
+                      </span>
+                      <span className="text-[11px] font-semibold text-foreground bg-background px-2 py-0.5 rounded border">
+                        {config.bankName}
+                      </span>
                     </div>
 
-                    <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                    <div className="space-y-2 text-xs">
                       <div>
-                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">Account Number</span>
-                        <span className="font-mono font-bold text-foreground text-sm">{config.bankAccountNumber}</span>
+                        <span className="text-muted-foreground block text-[11px]">Account Title</span>
+                        <span className="font-bold text-foreground text-sm">{config.bankAccountTitle}</span>
                       </div>
-                      <CopyButton text={config.bankAccountNumber} label="Account Number" />
-                    </div>
 
-                    <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
-                      <div className="min-w-0 pr-2">
-                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">IBAN Number</span>
-                        <span className="font-mono font-bold text-foreground text-xs block truncate">{config.bankIban}</span>
+                      <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                        <div>
+                          <span className="text-[10px] uppercase font-semibold text-muted-foreground block">Account Number</span>
+                          <span className="font-mono font-bold text-foreground text-sm">{config.bankAccountNumber}</span>
+                        </div>
+                        <CopyButton text={config.bankAccountNumber} label="Account Number" />
                       </div>
-                      <CopyButton text={config.bankIban} label="IBAN Number" />
+
+                      <div className="flex items-center justify-between bg-background p-2 rounded-lg border">
+                        <div className="min-w-0 pr-2">
+                          <span className="text-[10px] uppercase font-semibold text-muted-foreground block">IBAN Number</span>
+                          <span className="font-mono font-bold text-foreground text-xs block truncate">{config.bankIban}</span>
+                        </div>
+                        <CopyButton text={config.bankIban} label="IBAN Number" />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Mobile Wallets Box */}
-                <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                      <Wallet className="h-4 w-4" /> Mobile Wallets
-                    </span>
-                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                      Instant Transfer
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 text-xs">
-                    {/* Primary Mobile Wallet */}
-                    <div className="bg-background p-3 rounded-lg border space-y-2">
-                      <div className="flex flex-wrap items-center gap-1">
-                        {(config.walletProviders || "EasyPaisa, JazzCash, SadaPay, NayaPay")
-                          .split(",")
-                          .map((p) => p.trim())
-                          .filter(Boolean)
-                          .map((provider) => (
-                            <span
-                              key={provider}
-                              className="inline-flex items-center rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300"
-                            >
-                              {provider}
-                            </span>
-                          ))}
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-                          Account Title
-                        </span>
-                        <span className="font-bold text-foreground text-sm">
-                          {config.walletAccountTitle || config.bankAccountTitle}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1 border-t border-muted">
-                        <div>
-                          <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-                            Account Number
-                          </span>
-                          <span className="font-mono font-bold text-foreground text-sm">
-                            {config.walletAccountNumber || config.easypaisaNumber}
-                          </span>
-                        </div>
-                        <CopyButton
-                          text={config.walletAccountNumber || config.easypaisaNumber}
-                          label="Mobile Wallet Number"
-                        />
-                      </div>
+                {showWallet && (
+                  <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                        <Wallet className="h-4 w-4" /> Mobile Wallets
+                      </span>
+                      <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                        Instant Transfer
+                      </span>
                     </div>
 
-                    {/* Secondary Mobile Wallet (if configured) */}
-                    {config.wallet2AccountNumber ? (
+                    <div className="space-y-2 text-xs">
+                      {/* Primary Mobile Wallet */}
                       <div className="bg-background p-3 rounded-lg border space-y-2">
-                        {config.wallet2Providers ? (
-                          <div className="flex flex-wrap items-center gap-1">
-                            {config.wallet2Providers
-                              .split(",")
-                              .map((p) => p.trim())
-                              .filter(Boolean)
-                              .map((provider) => (
-                                <span
-                                  key={provider}
-                                  className="inline-flex items-center rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary"
-                                >
-                                  {provider}
-                                </span>
-                              ))}
-                          </div>
-                        ) : null}
+                        <div className="flex flex-wrap items-center gap-1">
+                          {(config.walletProviders || "EasyPaisa, JazzCash, SadaPay, NayaPay")
+                            .split(",")
+                            .map((p) => p.trim())
+                            .filter(Boolean)
+                            .map((provider) => (
+                              <span
+                                key={provider}
+                                className="inline-flex items-center rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300"
+                              >
+                                {provider}
+                              </span>
+                            ))}
+                        </div>
 
-                        {config.wallet2AccountTitle ? (
-                          <div>
-                            <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-                              Account Title
-                            </span>
-                            <span className="font-bold text-foreground text-sm">
-                              {config.wallet2AccountTitle}
-                            </span>
-                          </div>
-                        ) : null}
+                        <div>
+                          <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                            Account Title
+                          </span>
+                          <span className="font-bold text-foreground text-sm">
+                            {config.walletAccountTitle || config.bankAccountTitle}
+                          </span>
+                        </div>
 
                         <div className="flex items-center justify-between pt-1 border-t border-muted">
                           <div>
@@ -412,24 +390,72 @@ function Donate() {
                               Account Number
                             </span>
                             <span className="font-mono font-bold text-foreground text-sm">
-                              {config.wallet2AccountNumber}
+                              {config.walletAccountNumber || config.easypaisaNumber}
                             </span>
                           </div>
                           <CopyButton
-                            text={config.wallet2AccountNumber}
-                            label="Secondary Wallet Number"
+                            text={config.walletAccountNumber || config.easypaisaNumber}
+                            label="Mobile Wallet Number"
                           />
                         </div>
                       </div>
-                    ) : null}
 
-                    <div className="pt-1">
-                      <span className="text-[11px] text-muted-foreground block">
-                        {config.paymentInstructions || "Please upload a transfer screenshot below after sending for immediate verification."}
-                      </span>
+                      {/* Secondary Mobile Wallet (if configured) */}
+                      {config.wallet2AccountNumber ? (
+                        <div className="bg-background p-3 rounded-lg border space-y-2">
+                          {config.wallet2Providers ? (
+                            <div className="flex flex-wrap items-center gap-1">
+                              {config.wallet2Providers
+                                .split(",")
+                                .map((p) => p.trim())
+                                .filter(Boolean)
+                                .map((provider) => (
+                                  <span
+                                    key={provider}
+                                    className="inline-flex items-center rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary"
+                                  >
+                                    {provider}
+                                  </span>
+                                ))}
+                            </div>
+                          ) : null}
+
+                          {config.wallet2AccountTitle ? (
+                            <div>
+                              <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                                Account Title
+                              </span>
+                              <span className="font-bold text-foreground text-sm">
+                                {config.wallet2AccountTitle}
+                              </span>
+                            </div>
+                          ) : null}
+
+                          <div className="flex items-center justify-between pt-1 border-t border-muted">
+                            <div>
+                              <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                                Account Number
+                              </span>
+                              <span className="font-mono font-bold text-foreground text-sm">
+                                {config.wallet2AccountNumber}
+                              </span>
+                            </div>
+                            <CopyButton
+                              text={config.wallet2AccountNumber}
+                              label="Secondary Wallet Number"
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="pt-1">
+                        <span className="text-[11px] text-muted-foreground block">
+                          {config.paymentInstructions || "Please upload a transfer screenshot below after sending for immediate verification."}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -479,21 +505,53 @@ function Donate() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                If you have already sent funds via Online Banking or Mobile Wallets ({config.walletProviders || "EasyPaisa, JazzCash, SadaPay, NayaPay"}) to{" "}
-                <strong className="text-foreground font-semibold">{config.walletAccountNumber || config.easypaisaNumber || config.donationPhone}</strong>
-                {config.wallet2AccountNumber ? (
-                  <> or <strong className="text-foreground font-semibold">{config.wallet2AccountNumber}</strong> ({config.wallet2Providers || "Secondary"})</>
-                ) : null}
-                , upload a screenshot here for fast verification.
+                {showBank && showWallet ? (
+                  <>
+                    If you have already sent funds via Online Banking or Mobile Wallets ({config.walletProviders || "EasyPaisa, JazzCash, SadaPay, NayaPay"}) to{" "}
+                    <strong className="text-foreground font-semibold">{config.walletAccountNumber || config.easypaisaNumber || config.donationPhone}</strong>
+                    {config.wallet2AccountNumber ? (
+                      <> or <strong className="text-foreground font-semibold">{config.wallet2AccountNumber}</strong> ({config.wallet2Providers || "Secondary"})</>
+                    ) : null}
+                    , upload a screenshot here for fast verification.
+                  </>
+                ) : showWallet ? (
+                  <>
+                    If you have already sent funds via Mobile Wallet ({config.walletProviders || "EasyPaisa, JazzCash, SadaPay"}) to{" "}
+                    <strong className="text-foreground font-semibold">{config.walletAccountNumber || config.easypaisaNumber || config.donationPhone}</strong>
+                    {config.wallet2AccountNumber ? (
+                      <> or <strong className="text-foreground font-semibold">{config.wallet2AccountNumber}</strong> ({config.wallet2Providers || "Secondary"})</>
+                    ) : null}
+                    , upload a screenshot here for fast verification.
+                  </>
+                ) : (
+                  <>
+                    If you have already sent funds via Online Banking ({config.bankName}) to{" "}
+                    <strong className="text-foreground font-semibold">{config.bankAccountNumber}</strong>, upload a screenshot here for fast verification.
+                  </>
+                )}
               </p>
               <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[11px] text-muted-foreground">
-                <span>Bank: <strong className="text-foreground">{config.bankName}</strong></span>
-                <span>•</span>
-                <span>A/C: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankAccountNumber}</code></span>
-                <span>•</span>
-                <span>IBAN: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankIban}</code></span>
-                <span>•</span>
-                <span>Wallet A/C: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.walletAccountNumber || config.easypaisaNumber}</code></span>
+                {showBank && (
+                  <>
+                    <span>Bank: <strong className="text-foreground">{config.bankName}</strong></span>
+                    <span>•</span>
+                    <span>A/C: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankAccountNumber}</code></span>
+                    <span>•</span>
+                    <span>IBAN: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.bankIban}</code></span>
+                  </>
+                )}
+                {showBank && showWallet && <span>•</span>}
+                {showWallet && (
+                  <>
+                    <span>Wallet A/C: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{config.walletAccountNumber || config.easypaisaNumber}</code></span>
+                    {config.walletAccountTitle && (
+                      <>
+                        <span>•</span>
+                        <span>Title: <strong className="text-foreground">{config.walletAccountTitle}</strong></span>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
 
               {!screenshotPreview ? (

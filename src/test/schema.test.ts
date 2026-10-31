@@ -54,6 +54,7 @@ describe("Drizzle Schema", () => {
     expect(columns).toHaveProperty("wallet2_providers");
     expect(columns).toHaveProperty("wallet2_account_number");
     expect(columns).toHaveProperty("wallet2_account_title");
+    expect(columns).toHaveProperty("payment_display_mode");
     expect(columns).toHaveProperty("payment_instructions");
   });
 });

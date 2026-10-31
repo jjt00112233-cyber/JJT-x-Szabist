@@ -25,6 +25,7 @@ export type CampaignConfig = {
   wallet2Providers?: string;
   wallet2AccountNumber?: string;
   wallet2AccountTitle?: string;
+  paymentDisplayMode: "both" | "wallet_only" | "bank_only";
   paymentInstructions: string;
   updatedAt?: string;
 };
@@ -60,6 +61,7 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
           wallet2Providers: row.wallet2_providers || "",
           wallet2AccountNumber: row.wallet2_account_number || "",
           wallet2AccountTitle: row.wallet2_account_title || "",
+          paymentDisplayMode: (row.payment_display_mode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode,
           paymentInstructions: row.payment_instructions || SITE.paymentInstructions,
           updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
         };
@@ -88,6 +90,7 @@ export const getCampaignConfig = createServerFn({ method: "GET" }).handler(
       wallet2Providers: SITE.wallet2Providers,
       wallet2AccountNumber: SITE.wallet2AccountNumber,
       wallet2AccountTitle: SITE.wallet2AccountTitle,
+      paymentDisplayMode: SITE.paymentDisplayMode,
       paymentInstructions: SITE.paymentInstructions,
     };
   }
@@ -122,6 +125,7 @@ export function useCampaignConfig(): CampaignConfig {
       wallet2Providers: SITE.wallet2Providers,
       wallet2AccountNumber: SITE.wallet2AccountNumber,
       wallet2AccountTitle: SITE.wallet2AccountTitle,
+      paymentDisplayMode: SITE.paymentDisplayMode,
       paymentInstructions: SITE.paymentInstructions,
     }
   );

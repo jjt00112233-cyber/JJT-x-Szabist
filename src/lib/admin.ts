@@ -309,6 +309,7 @@ export const getAdminData = createServerFn({ method: "POST" })
           wallet2Providers: cfg.wallet2_providers || "",
           wallet2AccountNumber: cfg.wallet2_account_number || "",
           wallet2AccountTitle: cfg.wallet2_account_title || "",
+          paymentDisplayMode: (cfg.payment_display_mode as any) || SITE.paymentDisplayMode,
           paymentInstructions: cfg.payment_instructions || SITE.paymentInstructions,
           updatedAt: cfg.updated_at ? new Date(cfg.updated_at).toISOString() : undefined,
         }
@@ -332,6 +333,7 @@ export const getAdminData = createServerFn({ method: "POST" })
           wallet2Providers: SITE.wallet2Providers,
           wallet2AccountNumber: SITE.wallet2AccountNumber,
           wallet2AccountTitle: SITE.wallet2AccountTitle,
+          paymentDisplayMode: SITE.paymentDisplayMode,
           paymentInstructions: SITE.paymentInstructions,
         };
 
@@ -429,6 +431,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
       wallet2_providers?: string;
       wallet2_account_number?: string;
       wallet2_account_title?: string;
+      payment_display_mode?: string;
       payment_instructions?: string;
     }) => data
   )
@@ -457,6 +460,9 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
     const cleanEasypaisaTitle = (data.easypaisa_title || cleanWalletAccountTitle || "").trim() || cleanBankAccountTitle;
     const cleanJazzcashNumber = (data.jazzcash_number || cleanWallet2AccountNumber || cleanWalletAccountNumber || "").trim() || cleanPhone;
     const cleanJazzcashTitle = (data.jazzcash_title || cleanWallet2AccountTitle || cleanWalletAccountTitle || "").trim() || cleanBankAccountTitle;
+    const cleanPaymentDisplayMode = (data.payment_display_mode || "").trim() === "wallet_only" || (data.payment_display_mode || "").trim() === "bank_only"
+      ? (data.payment_display_mode || "").trim()
+      : "both";
     const cleanPaymentInstructions = (data.payment_instructions || "").trim() || SITE.paymentInstructions;
 
     await db
@@ -482,6 +488,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         wallet2_providers: cleanWallet2Providers,
         wallet2_account_number: cleanWallet2AccountNumber,
         wallet2_account_title: cleanWallet2AccountTitle,
+        payment_display_mode: cleanPaymentDisplayMode,
         payment_instructions: cleanPaymentInstructions,
         updated_at: new Date(),
       })
@@ -507,6 +514,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
           wallet2_providers: cleanWallet2Providers,
           wallet2_account_number: cleanWallet2AccountNumber,
           wallet2_account_title: cleanWallet2AccountTitle,
+          payment_display_mode: cleanPaymentDisplayMode,
           payment_instructions: cleanPaymentInstructions,
           updated_at: new Date(),
         },
@@ -534,6 +542,7 @@ export const updateCampaignConfigAdmin = createServerFn({ method: "POST" })
         wallet2Providers: cleanWallet2Providers,
         wallet2AccountNumber: cleanWallet2AccountNumber,
         wallet2AccountTitle: cleanWallet2AccountTitle,
+        paymentDisplayMode: cleanPaymentDisplayMode as "both" | "wallet_only" | "bank_only",
         paymentInstructions: cleanPaymentInstructions,
       },
     };

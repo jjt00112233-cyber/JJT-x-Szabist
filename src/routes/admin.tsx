@@ -134,6 +134,9 @@ function AdminPage() {
   const [showSecondaryWallet, setShowSecondaryWallet] = useState(
     Boolean(publicConfig.wallet2AccountNumber)
   );
+  const [editPaymentDisplayMode, setEditPaymentDisplayMode] = useState<"both" | "wallet_only" | "bank_only">(
+    (publicConfig.paymentDisplayMode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode
+  );
   const [editPaymentInstructions, setEditPaymentInstructions] = useState(publicConfig.paymentInstructions || SITE.paymentInstructions);
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -187,6 +190,9 @@ function AdminPage() {
       if (publicConfig.wallet2AccountNumber) {
         setShowSecondaryWallet(true);
       }
+      setEditPaymentDisplayMode(
+        (publicConfig.paymentDisplayMode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode
+      );
       setEditPaymentInstructions(publicConfig.paymentInstructions || SITE.paymentInstructions);
     }
   }, [
@@ -209,6 +215,7 @@ function AdminPage() {
     publicConfig.wallet2Providers,
     publicConfig.wallet2AccountNumber,
     publicConfig.wallet2AccountTitle,
+    publicConfig.paymentDisplayMode,
     publicConfig.paymentInstructions,
   ]);
 
@@ -316,6 +323,9 @@ function AdminPage() {
         if (res.campaignConfig.wallet2AccountNumber) {
           setShowSecondaryWallet(true);
         }
+        setEditPaymentDisplayMode(
+          (res.campaignConfig.paymentDisplayMode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode
+        );
         setEditPaymentInstructions(res.campaignConfig.paymentInstructions || SITE.paymentInstructions);
       }
       if (res.adminEmail) {
@@ -582,6 +592,7 @@ function AdminPage() {
           wallet2_providers: showSecondaryWallet ? secProvsStr : "",
           wallet2_account_number: showSecondaryWallet ? editWallet2AccountNumber.trim() : "",
           wallet2_account_title: showSecondaryWallet ? editWallet2AccountTitle.trim() : "",
+          payment_display_mode: editPaymentDisplayMode,
           payment_instructions: editPaymentInstructions.trim(),
         },
       });
@@ -631,6 +642,9 @@ function AdminPage() {
     setEditWallet2AccountNumber(config.wallet2AccountNumber || "");
     setEditWallet2AccountTitle(config.wallet2AccountTitle || "");
     setShowSecondaryWallet(Boolean(config.wallet2AccountNumber));
+    setEditPaymentDisplayMode(
+      (config.paymentDisplayMode as "both" | "wallet_only" | "bank_only") || SITE.paymentDisplayMode
+    );
     setEditPaymentInstructions(config.paymentInstructions || SITE.paymentInstructions);
     toast.info("Form reset to currently saved configuration.");
   }
@@ -1739,6 +1753,80 @@ function AdminPage() {
                       </div>
                     </div>
 
+                    {/* Frontend Account Details Display Option */}
+                    <div className="pt-4 border-t space-y-3">
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                          <Eye className="h-4 w-4 text-primary" /> Frontend Account Display Option
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Choose whether to display both accounts or only one account detail (Mobile Wallet or Bank Account) on the live website.
+                        </p>
+                      </div>
+
+                      <div className="grid gap-2.5 sm:grid-cols-3">
+                        <button
+                          type="button"
+                          onClick={() => setEditPaymentDisplayMode("both")}
+                          className={`rounded-xl border p-3 text-left transition ${
+                            editPaymentDisplayMode === "both"
+                              ? "border-primary bg-primary/10 ring-2 ring-primary/20 text-foreground"
+                              : "border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold">Both Accounts</span>
+                            {editPaymentDisplayMode === "both" && (
+                              <span className="text-[10px] font-semibold text-primary bg-primary/20 px-1.5 py-0.5 rounded">Active</span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[11px] leading-tight opacity-80">
+                            Show Bank Transfer & Mobile Wallets side by side.
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setEditPaymentDisplayMode("wallet_only")}
+                          className={`rounded-xl border p-3 text-left transition ${
+                            editPaymentDisplayMode === "wallet_only"
+                              ? "border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/20 text-foreground"
+                              : "border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold">Only Mobile Wallet</span>
+                            {editPaymentDisplayMode === "wallet_only" && (
+                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded">Active</span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[11px] leading-tight opacity-80">
+                            Show only 1 account: Mobile Wallet ({editWalletProviders.slice(0, 2).join(", ") || "Wallets"}).
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setEditPaymentDisplayMode("bank_only")}
+                          className={`rounded-xl border p-3 text-left transition ${
+                            editPaymentDisplayMode === "bank_only"
+                              ? "border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/20 text-foreground"
+                              : "border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold">Only Bank Account</span>
+                            {editPaymentDisplayMode === "bank_only" && (
+                              <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded">Active</span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[11px] leading-tight opacity-80">
+                            Show only 1 account: Bank Transfer ({editBankName || "Bank"}).
+                          </p>
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Bank Transfer Details Section */}
                     <div className="pt-4 border-t space-y-3">
                       <div>
@@ -2185,40 +2273,64 @@ function AdminPage() {
 
                     {/* Bank & Mobile Wallets Simulation */}
                     <div className="rounded-xl border bg-emerald-500/5 border-emerald-500/20 p-3 space-y-1.5 text-xs">
-                      <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                        <Building className="h-3 w-3" /> Official Bank & Wallet Details
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                          <Building className="h-3 w-3" /> Official Payment Details
+                        </p>
+                        <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                          {editPaymentDisplayMode === "both"
+                            ? "Both Accounts"
+                            : editPaymentDisplayMode === "wallet_only"
+                            ? "1 Account (Wallet)"
+                            : "1 Account (Bank)"}
+                        </span>
+                      </div>
                       <div className="space-y-1 pt-1 text-[11px]">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Bank:</span>
-                          <span className="font-semibold text-foreground">{editBankName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Title:</span>
-                          <span className="font-semibold text-foreground">{editBankAccountTitle}</span>
-                        </div>
-                        <div className="flex justify-between font-mono">
-                          <span className="text-muted-foreground font-sans">A/C:</span>
-                          <span className="font-semibold text-foreground">{editBankAccountNumber}</span>
-                        </div>
-                        <div className="flex justify-between font-mono">
-                          <span className="text-muted-foreground font-sans">IBAN:</span>
-                          <span className="font-semibold text-foreground truncate max-w-[130px]">{editBankIban}</span>
-                        </div>
-                        <div className="flex justify-between pt-1 border-t border-emerald-500/10 font-mono">
-                          <span className="text-muted-foreground font-sans truncate max-w-[110px]" title={editWalletProviders.join(", ") || "Wallets"}>
-                            {editWalletProviders.slice(0, 2).join("/") || "Wallet"}:
-                          </span>
-                          <span className="font-semibold text-foreground">{editWalletAccountNumber}</span>
-                        </div>
-                        {showSecondaryWallet && editWallet2AccountNumber ? (
-                          <div className="flex justify-between font-mono text-[10px]">
-                            <span className="text-muted-foreground font-sans truncate max-w-[110px]">
-                              {editWallet2Providers.slice(0, 2).join("/") || "Wallet 2"}:
-                            </span>
-                            <span className="font-semibold text-foreground">{editWallet2AccountNumber}</span>
-                          </div>
-                        ) : null}
+                        {editPaymentDisplayMode !== "wallet_only" && (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Bank:</span>
+                              <span className="font-semibold text-foreground">{editBankName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Title:</span>
+                              <span className="font-semibold text-foreground">{editBankAccountTitle}</span>
+                            </div>
+                            <div className="flex justify-between font-mono">
+                              <span className="text-muted-foreground font-sans">A/C:</span>
+                              <span className="font-semibold text-foreground">{editBankAccountNumber}</span>
+                            </div>
+                            <div className="flex justify-between font-mono">
+                              <span className="text-muted-foreground font-sans">IBAN:</span>
+                              <span className="font-semibold text-foreground truncate max-w-[130px]">{editBankIban}</span>
+                            </div>
+                          </>
+                        )}
+
+                        {editPaymentDisplayMode !== "bank_only" && (
+                          <>
+                            <div className={`flex justify-between font-mono ${editPaymentDisplayMode === "both" ? "pt-1 border-t border-emerald-500/10" : ""}`}>
+                              <span className="text-muted-foreground font-sans truncate max-w-[110px]" title={editWalletProviders.join(", ") || "Wallets"}>
+                                {editWalletProviders.slice(0, 2).join("/") || "Wallet"}:
+                              </span>
+                              <span className="font-semibold text-foreground">{editWalletAccountNumber}</span>
+                            </div>
+                            {editPaymentDisplayMode === "wallet_only" && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Title:</span>
+                                <span className="font-semibold text-foreground">{editWalletAccountTitle}</span>
+                              </div>
+                            )}
+                            {showSecondaryWallet && editWallet2AccountNumber ? (
+                              <div className="flex justify-between font-mono text-[10px]">
+                                <span className="text-muted-foreground font-sans truncate max-w-[110px]">
+                                  {editWallet2Providers.slice(0, 2).join("/") || "Wallet 2"}:
+                                </span>
+                                <span className="font-semibold text-foreground">{editWallet2AccountNumber}</span>
+                              </div>
+                            ) : null}
+                          </>
+                        )}
                       </div>
                     </div>
 

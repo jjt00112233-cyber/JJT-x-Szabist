@@ -18,8 +18,11 @@ export const SITE = {
   wallet2Providers: "",
   wallet2AccountNumber: "",
   wallet2AccountTitle: "",
+  paymentDisplayMode: "both" as "both" | "wallet_only" | "bank_only",
   paymentInstructions: "Please use your name as the transfer reference and upload your receipt screenshot below.",
 };
+
+export type PaymentDisplayMode = "both" | "wallet_only" | "bank_only";
 
 export const MOBILE_WALLET_OPTIONS = [
   "EasyPaisa",

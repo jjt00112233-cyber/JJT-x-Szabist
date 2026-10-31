@@ -45,6 +45,7 @@ export const campaignConfig = pgTable("campaign_config", {
   wallet2_providers: text("wallet2_providers").default(""),
   wallet2_account_number: text("wallet2_account_number").default(""),
   wallet2_account_title: text("wallet2_account_title").default(""),
+  payment_display_mode: text("payment_display_mode").notNull().default("both"),
   payment_instructions: text("payment_instructions").notNull().default("Please use your name as the transfer reference and upload your receipt screenshot below."),
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
