@@ -1,11 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "@/lib/db";
 import { donationRequests } from "../../drizzle/schema";
+import { sendNotificationForSubmission } from "@/lib/email";
 
 export type DonationInput = {
   full_name: string;
   email: string;
-  donor_type: "individual" | "foundation" | "company";
+  donor_type: "individual" | "foundation" | "company" | "contact" | string;
   organization?: string | null;
   phone?: string | null;
   intended_amount?: number | null;
@@ -29,6 +30,14 @@ export const submitDonationRequest = createServerFn({ method: "POST" })
         payment_proof_url: data.payment_proof_url ?? null,
       })
       .returning({ id: donationRequests.id });
+
+    // Send asynchronous email notification to admin via Resend
+    // Wrapped in try/catch so any mail dispatch failure never interrupts or fails the user submission
+    try {
+      await sendNotificationForSubmission(data);
+    } catch (emailErr) {
+      console.error("[Email Notification Error in submitDonationRequest]", emailErr);
+    }
 
     return { success: true, id: inserted?.id };
   });

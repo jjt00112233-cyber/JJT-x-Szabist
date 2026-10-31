@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { contributions, donationRequests, campaignConfig, adminAuth } from "../../drizzle/schema";
 import { desc, eq } from "drizzle-orm";
 import { SITE } from "./site";
+import { getResendApiKey, getNotificationEmail, sendTestNotification } from "./email";
 
 export async function hashPassword(password: string, salt: string): Promise<string> {
   const enc = new TextEncoder().encode(`${salt}:::${password}`);
@@ -318,6 +319,10 @@ export const getAdminData = createServerFn({ method: "POST" })
       })),
       campaignConfig: activeConfig,
       adminEmail: activeAdminEmail,
+      emailNotifications: {
+        configured: Boolean(getResendApiKey()),
+        recipientEmail: getNotificationEmail(),
+      },
     };
   });
 
@@ -502,4 +507,14 @@ export const updateAdminCredentials = createServerFn({ method: "POST" })
       token: newToken,
       message: "Admin email and password updated successfully",
     };
+  });
+
+export const sendTestEmailAdmin = createServerFn({ method: "POST" })
+  .validator((data: { token: string }) => data)
+  .handler(async ({ data }) => {
+    const isAuthed = await verifyToken(data.token);
+    if (!isAuthed) {
+      throw new Error("Unauthorized");
+    }
+    return await sendTestNotification();
   });

@@ -33,6 +33,8 @@ import {
   UploadCloud,
   Save,
   RotateCcw,
+  Send,
+  MailCheck,
 } from "lucide-react";
 import {
   adminLogin,
@@ -42,6 +44,7 @@ import {
   deleteDonationRequestAdmin,
   updateCampaignConfigAdmin,
   updateAdminCredentials,
+  sendTestEmailAdmin,
 } from "@/lib/admin";
 import { uploadPaymentScreenshot } from "@/lib/upload";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -108,6 +111,10 @@ function AdminPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [savingCredentials, setSavingCredentials] = useState(false);
+
+  // Resend Email Notification State
+  const [emailNotifications, setEmailNotifications] = useState<{ configured: boolean; recipientEmail: string } | null>(null);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
 
   // Synchronize with public configuration query when available
   useEffect(() => {
@@ -209,6 +216,9 @@ function AdminPage() {
       if (res.adminEmail) {
         setAdminEmail(res.adminEmail);
         setCredEmail(res.adminEmail);
+      }
+      if (res.emailNotifications) {
+        setEmailNotifications(res.emailNotifications);
       }
       setIsUnlocked(true);
     } catch {
@@ -554,6 +564,29 @@ function AdminPage() {
         }
       },
     });
+  }
+
+  async function handleSendTestEmail() {
+    if (!token) return;
+    setSendingTestEmail(true);
+    try {
+      const res = await sendTestEmailAdmin({ data: { token } });
+      if (res.success) {
+        toast.success(
+          `Test email sent successfully! Please check ${emailNotifications?.recipientEmail || "jjt00112233@gmail.com"}.`
+        );
+      } else if (res.skipped) {
+        toast.error(
+          "RESEND_API_KEY is not configured yet. Please add RESEND_API_KEY to your environment variables or Vercel settings."
+        );
+      } else {
+        toast.error(res.error || "Failed to send test email via Resend.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to trigger test email.");
+    } finally {
+      setSendingTestEmail(false);
+    }
   }
 
   const totalRaised = contributions.reduce((s, c) => s + c.amount, 0);
@@ -1828,6 +1861,87 @@ function AdminPage() {
                     </Button>
                   </div>
                 </form>
+              </div>
+
+              {/* ---------------- EMAIL NOTIFICATIONS CARD (RESEND) ---------------- */}
+              <div className="rounded-2xl border bg-card p-6 shadow-xs space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <MailCheck className="h-5 w-5 text-primary" /> Instant Email Notifications (Resend)
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Receive real-time alerts whenever a donor submits a contribution or a visitor sends an inquiry.
+                    </p>
+                  </div>
+                  {emailNotifications?.configured ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Active & Connected
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      <span className="h-2 w-2 rounded-full bg-amber-500" />
+                      Setup Needed (RESEND_API_KEY)
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-xl border bg-muted/30 p-4 space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Target Alert Inbox
+                    </p>
+                    <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary" />
+                      {emailNotifications?.recipientEmail || "jjt00112233@gmail.com"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      All new donation pledges, payment screenshots, and inquiries are dispatched here.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border bg-muted/30 p-4 space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Provider Status
+                    </p>
+                    <p className="text-sm font-bold text-foreground">
+                      {emailNotifications?.configured ? "Resend API Active" : "Pending RESEND_API_KEY"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Powered by Resend with native zero-dependency HTTP fetch for maximum serverless reliability.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-foreground">
+                      Test Email Delivery
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Click below to send a sample verification email to <span className="font-semibold text-foreground">{emailNotifications?.recipientEmail || "jjt00112233@gmail.com"}</span>.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={sendingTestEmail}
+                    onClick={handleSendTestEmail}
+                    className="gap-2 shrink-0 bg-background hover:bg-muted"
+                  >
+                    {sendingTestEmail ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" /> Sending Test...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 text-primary" /> Send Test Email
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           )}
