@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "@/lib/db";
 import { contributions, donationRequests, campaignConfig, adminAuth } from "../../drizzle/schema";
 import { desc, eq } from "drizzle-orm";
-import { SITE } from "./site";
+import { SITE, formatWhatsAppUrl } from "./site";
 
 export async function hashPassword(password: string, salt: string): Promise<string> {
   const enc = new TextEncoder().encode(`${salt}:::${password}`);
