@@ -35,6 +35,7 @@ import {
   RotateCcw,
   Wallet,
   Share2,
+  Layers,
 } from "lucide-react";
 import {
   adminLogin,
@@ -245,6 +246,7 @@ function AdminPage() {
   // Navigation State
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"all" | "identity" | "contacts" | "payment" | "wallets" | "instructions" | "security">("all");
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
@@ -1651,15 +1653,15 @@ function AdminPage() {
             </div>
           )}
 
-          {/* ---------------- VIEW 4: CAMPAIGN CONFIGURATION (DYNAMIC) ---------------- */}
+          {/* ---------------- VIEW 4: CAMPAIGN CONFIGURATION (DYNAMIC & ORGANIZED) ---------------- */}
           {activeView === "settings" && (
             <div className="w-full space-y-6">
               {/* Header Banner */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Campaign Configuration</h1>
+                  <h1 className="text-2xl font-bold text-foreground">Campaign Info & Configuration</h1>
                   <p className="text-sm text-muted-foreground">
-                    Customize campaign branding, targets, and public donor contact details in real-time.
+                    Customize branding, fundraising goals, public contacts, payment details, and donor instructions.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1675,506 +1677,410 @@ function AdminPage() {
                 </div>
               </div>
 
+              {/* Organized Sub-Navigation / Filter Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-xl bg-muted/60 border border-border/80">
+                {[
+                  { id: "all", label: "All Settings", icon: Layers },
+                  { id: "identity", label: "Identity & Goal", icon: Target },
+                  { id: "contacts", label: "Contacts & Socials", icon: Share2 },
+                  { id: "payment", label: "Bank Account", icon: Building },
+                  { id: "wallets", label: "Mobile Wallets", icon: Wallet },
+                  { id: "instructions", label: "Donor Instructions", icon: FileCheck },
+                  { id: "security", label: "Admin Security", icon: ShieldCheck },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = settingsTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSettingsTab(tab.id as any)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                        isActive
+                          ? "bg-background text-foreground shadow-xs border border-border"
+                          : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                      }`}
+                    >
+                      <Icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
               <div className="grid gap-6 lg:grid-cols-3">
-                {/* Form Card (2 Cols) */}
-                <div className="lg:col-span-2 rounded-2xl border bg-card p-5 sm:p-7 shadow-xs">
-                  <div className="flex items-center justify-between border-b pb-4 mb-6">
-                    <div>
-                      <h2 className="text-base font-semibold text-foreground">Edit Parameters</h2>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Changes will immediately reflect across the public website and admin dashboard.
-                      </p>
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleSaveConfig} className="space-y-5">
-                    {/* Campaign Identity */}
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="sm:col-span-2 space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                          Campaign Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={editConfigName}
-                          onChange={(e) => setEditConfigName(e.target.value)}
-                          placeholder="e.g. JJT × SZABIST Community"
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                        />
-                        <p className="text-[11px] text-muted-foreground">
-                          Shown in the main header, footer copyright, and page titles.
-                        </p>
-                      </div>
-
-                      <div className="sm:col-span-2 space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                          Beneficiary Trust / Tagline *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={editConfigSupporting}
-                          onChange={(e) => setEditConfigSupporting(e.target.value)}
-                          placeholder="e.g. supporting Junior Jinnah Trust"
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                        />
-                        <p className="text-[11px] text-muted-foreground">
-                          Appears beneath the campaign title in the navigation bar and footer.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Target Goal */}
-                    <div className="pt-2 border-t space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                          Fundraising Goal Target (PKR) *
-                        </label>
-                        <span className="text-xs font-semibold text-primary">
-                          Preview: {formatRs(Number(editConfigGoal) || 0)}
+                {/* Form Column (2 Cols) */}
+                <div className="lg:col-span-2 space-y-6">
+                  <form onSubmit={handleSaveConfig} className="space-y-6">
+                    {/* Quick Top Actions Toolbar */}
+                    <div className="flex items-center justify-between p-3.5 rounded-xl border bg-card shadow-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                        <span className="text-xs font-medium text-foreground">
+                          {settingsTab === "all"
+                            ? "All Sections Visible"
+                            : `Filtering: ${settingsTab.toUpperCase()}`}
                         </span>
                       </div>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
-                          Rs
-                        </span>
-                        <input
-                          type="number"
-                          required
-                          min={1000}
-                          step={1000}
-                          value={editConfigGoal}
-                          onChange={(e) => setEditConfigGoal(e.target.value)}
-                          placeholder="100000"
-                          className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                        />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">
-                        Used to calculate progress rings, percentage completed, and remaining funds needed across the site.
-                      </p>
-                    </div>
-
-                    {/* Contact Details */}
-                    <div className="pt-2 border-t grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                          Donation Contact Hotline *
-                        </label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <input
-                            type="text"
-                            required
-                            value={editConfigPhone}
-                            onChange={(e) => setEditConfigPhone(e.target.value)}
-                            placeholder="03219519360"
-                            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Hotline for inquiries, WhatsApp messages, and direct mobile transfers.
-                        </p>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                          Official Contact Email *
-                        </label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <input
-                            type="email"
-                            required
-                            value={editConfigEmail}
-                            onChange={(e) => setEditConfigEmail(e.target.value)}
-                            placeholder="jjtszabist.isb@gmail.com"
-                            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Target for the 1-click Gmail composer and questions from donors.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Social Media & WhatsApp Links Section */}
-                    <div className="pt-4 border-t space-y-3">
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                          <Share2 className="h-4 w-4 text-primary" /> Social Media & WhatsApp Links
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground">
-                          Direct links used in the header, footer, and contact page for donor communication and social media.
-                        </p>
-                      </div>
-
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {/* WhatsApp Number */}
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center justify-between">
-                            <span className="flex items-center gap-1.5">
-                              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                              WhatsApp Official Number *
-                            </span>
-                            <span className="text-[10px] lowercase font-mono text-muted-foreground">
-                              Link: {formatWhatsAppUrl(editWhatsappNumber)}
-                            </span>
-                          </label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-2.5 h-4 w-4 text-emerald-500" />
-                            <input
-                              type="tel"
-                              required
-                              value={editWhatsappNumber}
-                              onChange={(e) => setEditWhatsappNumber(e.target.value)}
-                              placeholder="03219519360"
-                              className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            />
-                          </div>
-                          <p className="text-[11px] text-muted-foreground">
-                            Enter your WhatsApp mobile number (e.g. <code>03219519360</code>). Chat links (<code>{formatWhatsAppUrl(editWhatsappNumber)}</code>) are generated automatically for header, footer, and contact buttons.
-                          </p>
-                        </div>
-
-                        {/* Facebook URL */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            Facebook Page URL
-                          </label>
-                          <input
-                            type="text"
-                            value={editFacebookUrl}
-                            onChange={(e) => setEditFacebookUrl(e.target.value)}
-                            placeholder="https://www.facebook.com/thejuniorjinnahtrust"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
-
-                        {/* Instagram URL */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            Instagram Profile URL
-                          </label>
-                          <input
-                            type="text"
-                            value={editInstagramUrl}
-                            onChange={(e) => setEditInstagramUrl(e.target.value)}
-                            placeholder="https://www.instagram.com/jinnahjuniortrust/"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
-
-                        {/* LinkedIn URL */}
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            LinkedIn Company URL
-                          </label>
-                          <input
-                            type="text"
-                            value={editLinkedinUrl}
-                            onChange={(e) => setEditLinkedinUrl(e.target.value)}
-                            placeholder="https://www.linkedin.com/company/54089173/"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Frontend Account Details Display Option */}
-                    <div className="pt-4 border-t space-y-3">
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                          <Eye className="h-4 w-4 text-primary" /> Frontend Account Display Option
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground">
-                          Choose whether to display both accounts or only one account detail (Mobile Wallet or Bank Account) on the live website.
-                        </p>
-                      </div>
-
-                      <div className="grid gap-2.5 sm:grid-cols-3">
-                        <button
+                      <div className="flex items-center gap-2">
+                        <Button
                           type="button"
-                          onClick={() => setEditPaymentDisplayMode("both")}
-                          className={`rounded-xl border p-3 text-left transition ${
-                            editPaymentDisplayMode === "both"
-                              ? "border-primary bg-primary/10 ring-2 ring-primary/20 text-foreground"
-                              : "border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                          }`}
+                          variant="outline"
+                          size="sm"
+                          disabled={savingConfig}
+                          onClick={handleResetConfig}
+                          className="gap-1.5 h-8 text-xs"
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold">Both Accounts</span>
-                            {editPaymentDisplayMode === "both" && (
-                              <span className="text-[10px] font-semibold text-primary bg-primary/20 px-1.5 py-0.5 rounded">Active</span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-[11px] leading-tight opacity-80">
-                            Show Bank Transfer & Mobile Wallets side by side.
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setEditPaymentDisplayMode("wallet_only")}
-                          className={`rounded-xl border p-3 text-left transition ${
-                            editPaymentDisplayMode === "wallet_only"
-                              ? "border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/20 text-foreground"
-                              : "border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                          }`}
+                          <RotateCcw className="h-3.5 w-3.5" /> Reset
+                        </Button>
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={savingConfig}
+                          className="gap-1.5 h-8 text-xs px-4"
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold">Only Mobile Wallet</span>
-                            {editPaymentDisplayMode === "wallet_only" && (
-                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded">Active</span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-[11px] leading-tight opacity-80">
-                            Show only 1 account: Mobile Wallet ({editWalletProviders.slice(0, 2).join(", ") || "Wallets"}).
-                          </p>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setEditPaymentDisplayMode("bank_only")}
-                          className={`rounded-xl border p-3 text-left transition ${
-                            editPaymentDisplayMode === "bank_only"
-                              ? "border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/20 text-foreground"
-                              : "border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold">Only Bank Account</span>
-                            {editPaymentDisplayMode === "bank_only" && (
-                              <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded">Active</span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-[11px] leading-tight opacity-80">
-                            Show only 1 account: Bank Transfer ({editBankName || "Bank"}).
-                          </p>
-                        </button>
+                          {savingConfig ? (
+                            <>
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-3.5 w-3.5" /> Save Changes
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Bank Transfer Details Section */}
-                    <div className="pt-4 border-t space-y-3">
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                          <Building className="h-4 w-4 text-primary" /> Bank Account Details (Online Banking & Raast)
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground">
-                          Displayed on /donate for donors making direct bank deposits or online bank transfers.
-                        </p>
-                      </div>
-
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            Bank Name *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={editBankName}
-                            onChange={(e) => setEditBankName(e.target.value)}
-                            placeholder="e.g. Meezan Bank, HBL, Bank Alfalah"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
+                    {/* CARD 1: Campaign Identity & Goal */}
+                    {(settingsTab === "all" || settingsTab === "identity") && (
+                      <div className="rounded-2xl border bg-card p-5 sm:p-6 shadow-xs space-y-5 transition">
+                        <div className="flex items-start justify-between border-b pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                              <Target className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm sm:text-base font-bold text-foreground">
+                                Campaign Identity & Fundraising Target
+                              </h3>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Public branding names, supporting tagline, and overall fundraising target in PKR.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 shrink-0 hidden sm:inline-block">
+                            {formatRs(Number(editConfigGoal) || 0)}
+                          </span>
                         </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                            Account Title *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={editBankAccountTitle}
-                            onChange={(e) => setEditBankAccountTitle(e.target.value)}
-                            placeholder="e.g. Junior Jinnah Trust"
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          />
-                        </div>
-
-                        {/* Account Number / IBAN Format Dropdown */}
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center justify-between">
-                            <span>Account Details Format (Select IBAN, Account No, or Both) *</span>
-                            <span className="text-[10px] text-muted-foreground font-normal lowercase">
-                              {editBankIdentifierType === "both" ? "showing both fields" : editBankIdentifierType === "account_only" ? "account number only" : "iban only"}
-                            </span>
-                          </label>
-                          <select
-                            value={editBankIdentifierType}
-                            onChange={(e) => setEditBankIdentifierType(e.target.value as "both" | "account_only" | "iban_only")}
-                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          >
-                            <option value="both">Both (Account Number & IBAN) – Show Both Fields</option>
-                            <option value="account_only">Account Number Only – Show Account Number Field</option>
-                            <option value="iban_only">IBAN Only – Show IBAN Field</option>
-                          </select>
-                          <p className="text-[11px] text-muted-foreground">
-                            Choose whether to show donors only the Bank Account Number, only the IBAN, or both account identifiers.
-                          </p>
-                        </div>
-
-                        {/* Account Number Input (shown when 'both' or 'account_only') */}
-                        {(editBankIdentifierType === "both" || editBankIdentifierType === "account_only") && (
-                          <div className={`space-y-1.5 ${editBankIdentifierType === "account_only" ? "sm:col-span-2" : ""}`}>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-1.5 sm:col-span-2">
                             <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                              Account Number *
-                            </label>
-                            <input
-                              type="text"
-                              required={editBankIdentifierType === "both" || editBankIdentifierType === "account_only"}
-                              value={editBankAccountNumber}
-                              onChange={(e) => setEditBankAccountNumber(e.target.value)}
-                              placeholder="e.g. 01010101010101"
-                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            />
-                          </div>
-                        )}
-
-                        {/* IBAN Input (shown when 'both' or 'iban_only') */}
-                        {(editBankIdentifierType === "both" || editBankIdentifierType === "iban_only") && (
-                          <div className={`space-y-1.5 ${editBankIdentifierType === "iban_only" ? "sm:col-span-2" : ""}`}>
-                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                              IBAN (International / Raast) *
-                            </label>
-                            <input
-                              type="text"
-                              required={editBankIdentifierType === "both" || editBankIdentifierType === "iban_only"}
-                              value={editBankIban}
-                              onChange={(e) => setEditBankIban(e.target.value)}
-                              placeholder="e.g. PK00MEZN0001010101010101"
-                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Mobile Wallets Details Section */}
-                    <div className="pt-4 border-t space-y-4">
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                          <Wallet className="h-4 w-4 text-emerald-600" /> Mobile Wallets Configuration
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground">
-                          Configure supported mobile wallets (EasyPaisa, JazzCash, SadaPay, NayaPay, Raast), account number, and title.
-                        </p>
-                      </div>
-
-                      {/* Primary Mobile Wallet Card */}
-                      <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
-                            Supported Wallet Providers (Select Single or Multiple) *
-                          </label>
-
-                          {/* Interactive multi-select pills */}
-                          <div className="flex flex-wrap gap-1.5">
-                            {MOBILE_WALLET_OPTIONS.map((opt) => {
-                              const isSelected = editWalletProviders.includes(opt);
-                              return (
-                                <button
-                                  key={opt}
-                                  type="button"
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setEditWalletProviders(editWalletProviders.filter((p) => p !== opt));
-                                    } else {
-                                      setEditWalletProviders([...editWalletProviders, opt]);
-                                    }
-                                  }}
-                                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                                    isSelected
-                                      ? "bg-emerald-600 text-white shadow-xs"
-                                      : "bg-background border border-input text-muted-foreground hover:text-foreground hover:bg-accent"
-                                  }`}
-                                >
-                                  {isSelected ? "✓" : "+"} {opt}
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {/* Quick Dropdown Selector to add provider or select standard option */}
-                          <div className="flex items-center gap-2 pt-1">
-                            <select
-                              aria-label="Add Wallet Provider"
-                              className="text-xs rounded-lg border border-input bg-background px-2.5 py-1.5 text-foreground outline-none focus:border-primary"
-                              value=""
-                              onChange={(e) => {
-                                const val = e.target.value.trim();
-                                if (val && !editWalletProviders.includes(val)) {
-                                  setEditWalletProviders([...editWalletProviders, val]);
-                                }
-                                e.target.value = "";
-                              }}
-                            >
-                              <option value="">+ Add Provider from Dropdown...</option>
-                              {MOBILE_WALLET_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt} disabled={editWalletProviders.includes(opt)}>
-                                  {opt} {editWalletProviders.includes(opt) ? "(Selected)" : ""}
-                                </option>
-                              ))}
-                            </select>
-
-                            {editWalletProviders.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setEditWalletProviders([])}
-                                className="text-[11px] text-muted-foreground hover:text-destructive underline"
-                              >
-                                Clear selection
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Display active selected providers */}
-                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                            <span className="text-[11px] text-muted-foreground">Selected:</span>
-                            {editWalletProviders.length > 0 ? (
-                              editWalletProviders.map((prov) => (
-                                <span
-                                  key={prov}
-                                  className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-300"
-                                >
-                                  {prov}
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditWalletProviders(editWalletProviders.filter((p) => p !== prov))}
-                                    className="ml-0.5 hover:text-destructive"
-                                    title={`Remove ${prov}`}
-                                  >
-                                    ×
-                                  </button>
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-[11px] text-destructive italic">
-                                Please select at least one provider (e.g. EasyPaisa, JazzCash, SadaPay)
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-muted/50">
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                              Account Number *
+                              Campaign Name *
                             </label>
                             <input
                               type="text"
                               required
-                              value={editWalletAccountNumber}
-                              onChange={(e) => setEditWalletAccountNumber(e.target.value)}
-                              placeholder="03219519360"
-                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              value={editConfigName}
+                              onChange={(e) => setEditConfigName(e.target.value)}
+                              placeholder="e.g. JJT × SZABIST Community"
+                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                             <p className="text-[11px] text-muted-foreground">
-                              The active mobile number used for this wallet.
+                              Featured in the website navigation bar, page meta titles, and footer branding.
                             </p>
+                          </div>
+
+                          <div className="space-y-1.5 sm:col-span-2">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              Beneficiary Trust / Tagline *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={editConfigSupporting}
+                              onChange={(e) => setEditConfigSupporting(e.target.value)}
+                              placeholder="e.g. supporting Junior Jinnah Trust"
+                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
+                            <p className="text-[11px] text-muted-foreground">
+                              Appears right under the campaign name in headers and footer badges.
+                            </p>
+                          </div>
+
+                          <div className="space-y-1.5 sm:col-span-2 pt-2 border-t">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                Fundraising Goal Target (PKR) *
+                              </label>
+                              <span className="text-xs font-semibold text-primary font-mono">
+                                Target: {formatRs(Number(editConfigGoal) || 0)}
+                              </span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
+                                Rs
+                              </span>
+                              <input
+                                type="number"
+                                required
+                                min={1000}
+                                step={1000}
+                                value={editConfigGoal}
+                                onChange={(e) => setEditConfigGoal(e.target.value)}
+                                placeholder="100000"
+                                className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Sets the 100% benchmark for the progress ring, goal milestone bar, and remaining funds needed.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CARD 2: Public Contacts & Socials */}
+                    {(settingsTab === "all" || settingsTab === "contacts") && (
+                      <div className="rounded-2xl border bg-card p-5 sm:p-6 shadow-xs space-y-5 transition">
+                        <div className="flex items-start justify-between border-b pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                              <Share2 className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm sm:text-base font-bold text-foreground">
+                                Public Contacts & Social Media Links
+                              </h3>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Direct donor inquiry hotline, official email, WhatsApp instant messaging, and social profiles.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 shrink-0 hidden sm:inline-block">
+                            Direct Contacts
+                          </span>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {/* Hotline Phone */}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              Donation Contact Hotline *
+                            </label>
+                            <div className="relative">
+                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="text"
+                                required
+                                value={editConfigPhone}
+                                onChange={(e) => setEditConfigPhone(e.target.value)}
+                                placeholder="03219519360"
+                                className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Primary inquiry number listed on header and contact page.
+                            </p>
+                          </div>
+
+                          {/* Contact Email */}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              Official Contact Email *
+                            </label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="email"
+                                required
+                                value={editConfigEmail}
+                                onChange={(e) => setEditConfigEmail(e.target.value)}
+                                placeholder="jjtszabist.isb@gmail.com"
+                                className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Opens Gmail composer for donor inquiries.
+                            </p>
+                          </div>
+
+                          {/* WhatsApp Official Number */}
+                          <div className="space-y-1.5 sm:col-span-2 pt-2 border-t">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center justify-between">
+                              <span className="flex items-center gap-1.5">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                WhatsApp Official Mobile Number *
+                              </span>
+                              <span className="text-[10px] lowercase font-mono text-muted-foreground">
+                                Chat Link: {formatWhatsAppUrl(editWhatsappNumber)}
+                              </span>
+                            </label>
+                            <div className="relative">
+                              <Phone className="absolute left-3 top-2.5 h-4 w-4 text-emerald-500" />
+                              <input
+                                type="tel"
+                                required
+                                value={editWhatsappNumber}
+                                onChange={(e) => setEditWhatsappNumber(e.target.value)}
+                                placeholder="03219519360"
+                                className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Enter standard mobile digits (e.g. <code>03219519360</code>). Chat links (<code>{formatWhatsAppUrl(editWhatsappNumber)}</code>) are generated automatically for header, footer, and contact buttons.
+                            </p>
+                          </div>
+
+                          {/* Social Links Subgrid */}
+                          <div className="sm:col-span-2 pt-2 border-t grid gap-4 sm:grid-cols-3">
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                Facebook Page URL
+                              </label>
+                              <input
+                                type="text"
+                                value={editFacebookUrl}
+                                onChange={(e) => setEditFacebookUrl(e.target.value)}
+                                placeholder="https://www.facebook.com/..."
+                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                Instagram Profile URL
+                              </label>
+                              <input
+                                type="text"
+                                value={editInstagramUrl}
+                                onChange={(e) => setEditInstagramUrl(e.target.value)}
+                                placeholder="https://www.instagram.com/..."
+                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                LinkedIn Company URL
+                              </label>
+                              <input
+                                type="text"
+                                value={editLinkedinUrl}
+                                onChange={(e) => setEditLinkedinUrl(e.target.value)}
+                                placeholder="https://www.linkedin.com/..."
+                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CARD 3: Bank Account Details & Display Mode */}
+                    {(settingsTab === "all" || settingsTab === "payment") && (
+                      <div className="rounded-2xl border bg-card p-5 sm:p-6 shadow-xs space-y-5 transition">
+                        <div className="flex items-start justify-between border-b pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                              <Building className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm sm:text-base font-bold text-foreground">
+                                Bank Account Details & Display Mode
+                              </h3>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Official bank deposit credentials, IBAN/Account No format, and frontend display options.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 shrink-0 hidden sm:inline-block">
+                            {editPaymentDisplayMode === "both" ? "Both Accounts" : editPaymentDisplayMode === "wallet_only" ? "Wallet Only" : "Bank Only"}
+                          </span>
+                        </div>
+
+                        {/* Frontend Display Mode Selector */}
+                        <div className="space-y-2.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                            Frontend Payment Accounts Display Option *
+                          </label>
+                          <div className="grid gap-2.5 sm:grid-cols-3">
+                            <button
+                              type="button"
+                              onClick={() => setEditPaymentDisplayMode("both")}
+                              className={`rounded-xl border p-3 text-left transition ${
+                                editPaymentDisplayMode === "both"
+                                  ? "border-primary bg-primary/10 ring-2 ring-primary/20 text-foreground"
+                                  : "border-input bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold">Both Accounts</span>
+                                {editPaymentDisplayMode === "both" && (
+                                  <span className="text-[10px] font-semibold text-primary bg-primary/20 px-1.5 py-0.5 rounded">Active</span>
+                                )}
+                              </div>
+                              <p className="mt-1 text-[11px] leading-tight opacity-80">
+                                Show Bank Transfer & Mobile Wallets side by side.
+                              </p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setEditPaymentDisplayMode("wallet_only")}
+                              className={`rounded-xl border p-3 text-left transition ${
+                                editPaymentDisplayMode === "wallet_only"
+                                  ? "border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/20 text-foreground"
+                                  : "border-input bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold">Only Mobile Wallet</span>
+                                {editPaymentDisplayMode === "wallet_only" && (
+                                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded">Active</span>
+                                )}
+                              </div>
+                              <p className="mt-1 text-[11px] leading-tight opacity-80">
+                                Show only 1 account: Mobile Wallet ({editWalletProviders.slice(0, 2).join(", ") || "Wallets"}).
+                              </p>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setEditPaymentDisplayMode("bank_only")}
+                              className={`rounded-xl border p-3 text-left transition ${
+                                editPaymentDisplayMode === "bank_only"
+                                  ? "border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/20 text-foreground"
+                                  : "border-input bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold">Only Bank Account</span>
+                                {editPaymentDisplayMode === "bank_only" && (
+                                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/20 px-1.5 py-0.5 rounded">Active</span>
+                                )}
+                              </div>
+                              <p className="mt-1 text-[11px] leading-tight opacity-80">
+                                Show only 1 account: Bank Transfer ({editBankName || "Bank"}).
+                              </p>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Bank Details Inputs */}
+                        <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                              Bank Name *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={editBankName}
+                              onChange={(e) => setEditBankName(e.target.value)}
+                              placeholder="e.g. Meezan Bank, HBL, Bank Alfalah"
+                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
                           </div>
 
                           <div className="space-y-1.5">
@@ -2184,186 +2090,428 @@ function AdminPage() {
                             <input
                               type="text"
                               required
-                              value={editWalletAccountTitle}
-                              onChange={(e) => setEditWalletAccountTitle(e.target.value)}
-                              placeholder="Junior Jinnah Trust"
+                              value={editBankAccountTitle}
+                              onChange={(e) => setEditBankAccountTitle(e.target.value)}
+                              placeholder="e.g. Junior Jinnah Trust"
                               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
+                          </div>
+
+                          {/* Account Number / IBAN Format Dropdown */}
+                          <div className="space-y-1.5 sm:col-span-2 pt-1 border-t">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center justify-between">
+                              <span>Account Identifiers Format (IBAN / Account No / Both) *</span>
+                              <span className="text-[10px] text-muted-foreground font-normal lowercase">
+                                {editBankIdentifierType === "both" ? "showing both fields" : editBankIdentifierType === "account_only" ? "account number only" : "iban only"}
+                              </span>
+                            </label>
+                            <select
+                              value={editBankIdentifierType}
+                              onChange={(e) => setEditBankIdentifierType(e.target.value as "both" | "account_only" | "iban_only")}
+                              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            >
+                              <option value="both">Both (Account Number & IBAN) – Show Both Fields</option>
+                              <option value="account_only">Account Number Only – Show Account Number Field</option>
+                              <option value="iban_only">IBAN Only – Show IBAN Field</option>
+                            </select>
                             <p className="text-[11px] text-muted-foreground">
-                              Name that appears when donors look up this wallet.
+                              Select which identifiers donors should see for online banking and Raast transfers.
                             </p>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* Secondary Mobile Wallet Account (Optional) */}
-                      <div className="rounded-xl border border-dashed bg-card p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="enableSecondaryWallet"
-                              type="checkbox"
-                              checked={showSecondaryWallet}
-                              onChange={(e) => {
-                                setShowSecondaryWallet(e.target.checked);
-                                if (!e.target.checked) {
-                                  setEditWallet2AccountNumber("");
-                                  setEditWallet2AccountTitle("");
-                                  setEditWallet2Providers([]);
-                                }
-                              }}
-                              className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
-                            />
-                            <label htmlFor="enableSecondaryWallet" className="text-xs font-semibold text-foreground cursor-pointer">
-                              Add Secondary Mobile Wallet (Optional, e.g. for a separate phone number or Raast)
-                            </label>
-                          </div>
-                          {showSecondaryWallet && (
-                            <span className="text-[10px] uppercase font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                              Active
-                            </span>
+                          {/* Dynamic Account Number Input */}
+                          {(editBankIdentifierType === "both" || editBankIdentifierType === "account_only") && (
+                            <div className={`space-y-1.5 ${editBankIdentifierType === "account_only" ? "sm:col-span-2" : ""}`}>
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                Account Number *
+                              </label>
+                              <input
+                                type="text"
+                                required={editBankIdentifierType === "both" || editBankIdentifierType === "account_only"}
+                                value={editBankAccountNumber}
+                                onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                                placeholder="e.g. 01010101010101"
+                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
+                          )}
+
+                          {/* Dynamic IBAN Input */}
+                          {(editBankIdentifierType === "both" || editBankIdentifierType === "iban_only") && (
+                            <div className={`space-y-1.5 ${editBankIdentifierType === "iban_only" ? "sm:col-span-2" : ""}`}>
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                IBAN (International / Raast) *
+                              </label>
+                              <input
+                                type="text"
+                                required={editBankIdentifierType === "both" || editBankIdentifierType === "iban_only"}
+                                value={editBankIban}
+                                onChange={(e) => setEditBankIban(e.target.value)}
+                                placeholder="e.g. PK00MEZN0001010101010101"
+                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                            </div>
                           )}
                         </div>
+                      </div>
+                    )}
 
-                        {showSecondaryWallet && (
-                          <div className="space-y-4 pt-3 border-t">
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
-                                Secondary Wallet Providers
-                              </label>
-                              <div className="flex flex-wrap gap-1.5">
-                                {MOBILE_WALLET_OPTIONS.map((opt) => {
-                                  const isSelected = editWallet2Providers.includes(opt);
-                                  return (
-                                    <button
-                                      key={`sec-${opt}`}
-                                      type="button"
-                                      onClick={() => {
-                                        if (isSelected) {
-                                          setEditWallet2Providers(editWallet2Providers.filter((p) => p !== opt));
-                                        } else {
-                                          setEditWallet2Providers([...editWallet2Providers, opt]);
-                                        }
-                                      }}
-                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition ${
-                                        isSelected
-                                          ? "bg-primary text-primary-foreground shadow-xs"
-                                          : "bg-background border border-input text-muted-foreground hover:text-foreground"
-                                      }`}
-                                    >
-                                      {isSelected ? "✓" : "+"} {opt}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              <div className="flex items-center gap-2 pt-1">
-                                <select
-                                  aria-label="Add Secondary Provider"
-                                  className="text-xs rounded-lg border border-input bg-background px-2.5 py-1.5 text-foreground outline-none focus:border-primary"
-                                  value=""
-                                  onChange={(e) => {
-                                    const val = e.target.value.trim();
-                                    if (val && !editWallet2Providers.includes(val)) {
-                                      setEditWallet2Providers([...editWallet2Providers, val]);
-                                    }
-                                    e.target.value = "";
-                                  }}
-                                >
-                                  <option value="">+ Add Provider from Dropdown...</option>
-                                  {MOBILE_WALLET_OPTIONS.map((opt) => (
-                                    <option key={`sec-opt-${opt}`} value={opt} disabled={editWallet2Providers.includes(opt)}>
-                                      {opt} {editWallet2Providers.includes(opt) ? "(Selected)" : ""}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
+                    {/* CARD 4: Mobile Wallets Configuration */}
+                    {(settingsTab === "all" || settingsTab === "wallets") && (
+                      <div className="rounded-2xl border bg-card p-5 sm:p-6 shadow-xs space-y-5 transition">
+                        <div className="flex items-start justify-between border-b pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                              <Wallet className="h-5 w-5" />
                             </div>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                              <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                                  Secondary Account Number
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editWallet2AccountNumber}
-                                  onChange={(e) => setEditWallet2AccountNumber(e.target.value)}
-                                  placeholder="03001234567"
-                                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                                />
-                              </div>
-
-                              <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                                  Secondary Account Title
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editWallet2AccountTitle}
-                                  onChange={(e) => setEditWallet2AccountTitle(e.target.value)}
-                                  placeholder="Junior Jinnah Trust"
-                                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                                />
-                              </div>
+                            <div>
+                              <h3 className="text-sm sm:text-base font-bold text-foreground">
+                                Mobile Wallets Configuration
+                              </h3>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Multi-provider mobile wallets (EasyPaisa, JazzCash, SadaPay, NayaPay) and optional secondary wallet.
+                              </p>
                             </div>
                           </div>
-                        )}
+                          <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 shrink-0 hidden sm:inline-block">
+                            {editWalletProviders.length} Selected
+                          </span>
+                        </div>
+
+                        {/* Primary Mobile Wallet Card */}
+                        <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                              Supported Primary Wallet Providers *
+                            </label>
+
+                            {/* Interactive multi-select pills */}
+                            <div className="flex flex-wrap gap-1.5">
+                              {MOBILE_WALLET_OPTIONS.map((opt) => {
+                                const isSelected = editWalletProviders.includes(opt);
+                                return (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => {
+                                      if (isSelected) {
+                                        setEditWalletProviders(editWalletProviders.filter((p) => p !== opt));
+                                      } else {
+                                        setEditWalletProviders([...editWalletProviders, opt]);
+                                      }
+                                    }}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                                      isSelected
+                                        ? "bg-emerald-600 text-white shadow-xs"
+                                        : "bg-background border border-input text-muted-foreground hover:text-foreground hover:bg-accent"
+                                    }`}
+                                  >
+                                    {isSelected ? "✓" : "+"} {opt}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Quick Dropdown Selector */}
+                            <div className="flex items-center gap-2 pt-1">
+                              <select
+                                aria-label="Add Wallet Provider"
+                                className="text-xs rounded-lg border border-input bg-background px-2.5 py-1.5 text-foreground outline-none focus:border-primary"
+                                value=""
+                                onChange={(e) => {
+                                  const val = e.target.value.trim();
+                                  if (val && !editWalletProviders.includes(val)) {
+                                    setEditWalletProviders([...editWalletProviders, val]);
+                                  }
+                                  e.target.value = "";
+                                }}
+                              >
+                                <option value="">+ Add Provider from Dropdown...</option>
+                                {MOBILE_WALLET_OPTIONS.map((opt) => (
+                                  <option key={opt} value={opt} disabled={editWalletProviders.includes(opt)}>
+                                    {opt} {editWalletProviders.includes(opt) ? "(Selected)" : ""}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {editWalletProviders.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setEditWalletProviders([])}
+                                  className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                                >
+                                  Clear selection
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Display active selected providers */}
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                              <span className="text-[11px] text-muted-foreground">Active:</span>
+                              {editWalletProviders.length > 0 ? (
+                                editWalletProviders.map((prov) => (
+                                  <span
+                                    key={prov}
+                                    className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-300"
+                                  >
+                                    {prov}
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditWalletProviders(editWalletProviders.filter((p) => p !== prov))}
+                                      className="ml-0.5 hover:text-destructive"
+                                      title={`Remove ${prov}`}
+                                    >
+                                      ×
+                                    </button>
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-[11px] text-destructive italic">
+                                  Please select at least one provider (e.g. EasyPaisa, JazzCash, SadaPay)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-muted/50">
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                Account Number (Mobile No) *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={editWalletAccountNumber}
+                                onChange={(e) => setEditWalletAccountNumber(e.target.value)}
+                                placeholder="03219519360"
+                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                              <p className="text-[11px] text-muted-foreground">
+                                Active phone number registered for this wallet.
+                              </p>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                Account Title *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={editWalletAccountTitle}
+                                onChange={(e) => setEditWalletAccountTitle(e.target.value)}
+                                placeholder="Junior Jinnah Trust"
+                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                              <p className="text-[11px] text-muted-foreground">
+                                Account title shown during receiver verification.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Secondary Mobile Wallet Account (Optional) */}
+                        <div className="rounded-xl border border-dashed bg-card p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <input
+                                id="enableSecondaryWallet"
+                                type="checkbox"
+                                checked={showSecondaryWallet}
+                                onChange={(e) => {
+                                  setShowSecondaryWallet(e.target.checked);
+                                  if (!e.target.checked) {
+                                    setEditWallet2AccountNumber("");
+                                    setEditWallet2AccountTitle("");
+                                    setEditWallet2Providers([]);
+                                  }
+                                }}
+                                className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                              />
+                              <label htmlFor="enableSecondaryWallet" className="text-xs font-semibold text-foreground cursor-pointer">
+                                Add Secondary Mobile Wallet (Optional, e.g. for a 2nd phone number or Raast)
+                              </label>
+                            </div>
+                            {showSecondaryWallet && (
+                              <span className="text-[10px] uppercase font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                                Active
+                              </span>
+                            )}
+                          </div>
+
+                          {showSecondaryWallet && (
+                            <div className="space-y-4 pt-3 border-t">
+                              <div className="space-y-2">
+                                <label className="text-xs font-semibold text-foreground uppercase tracking-wider block">
+                                  Secondary Wallet Providers
+                                </label>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {MOBILE_WALLET_OPTIONS.map((opt) => {
+                                    const isSelected = editWallet2Providers.includes(opt);
+                                    return (
+                                      <button
+                                        key={`sec-${opt}`}
+                                        type="button"
+                                        onClick={() => {
+                                          if (isSelected) {
+                                            setEditWallet2Providers(editWallet2Providers.filter((p) => p !== opt));
+                                          } else {
+                                            setEditWallet2Providers([...editWallet2Providers, opt]);
+                                          }
+                                        }}
+                                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                                          isSelected
+                                            ? "bg-primary text-primary-foreground shadow-xs"
+                                            : "bg-background border border-input text-muted-foreground hover:text-foreground"
+                                        }`}
+                                      >
+                                        {isSelected ? "✓" : "+"} {opt}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+
+                                <div className="flex items-center gap-2 pt-1">
+                                  <select
+                                    aria-label="Add Secondary Provider"
+                                    className="text-xs rounded-lg border border-input bg-background px-2.5 py-1.5 text-foreground outline-none focus:border-primary"
+                                    value=""
+                                    onChange={(e) => {
+                                      const val = e.target.value.trim();
+                                      if (val && !editWallet2Providers.includes(val)) {
+                                        setEditWallet2Providers([...editWallet2Providers, val]);
+                                      }
+                                      e.target.value = "";
+                                    }}
+                                  >
+                                    <option value="">+ Add Provider from Dropdown...</option>
+                                    {MOBILE_WALLET_OPTIONS.map((opt) => (
+                                      <option key={`sec-opt-${opt}`} value={opt} disabled={editWallet2Providers.includes(opt)}>
+                                        {opt} {editWallet2Providers.includes(opt) ? "(Selected)" : ""}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                    Secondary Account Number
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editWallet2AccountNumber}
+                                    onChange={(e) => setEditWallet2AccountNumber(e.target.value)}
+                                    placeholder="03001234567"
+                                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                  />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                                    Secondary Account Title
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editWallet2AccountTitle}
+                                    onChange={(e) => setEditWallet2AccountTitle(e.target.value)}
+                                    placeholder="Junior Jinnah Trust"
+                                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    {/* Payment Instructions Note */}
-                    <div className="pt-4 border-t space-y-1.5">
-                      <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                        Donor Transfer Instructions / Note
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={editPaymentInstructions}
-                        onChange={(e) => setEditPaymentInstructions(e.target.value)}
-                        placeholder="Please use your name as the transfer reference and upload your receipt screenshot below."
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      />
-                      <p className="text-[11px] text-muted-foreground">
-                        Shown to donors on the /donate page right above the receipt upload zone.
-                      </p>
-                    </div>
+                    {/* CARD 5: Donor Payment Instructions */}
+                    {(settingsTab === "all" || settingsTab === "instructions") && (
+                      <div className="rounded-2xl border bg-card p-5 sm:p-6 shadow-xs space-y-4 transition">
+                        <div className="flex items-start justify-between border-b pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                              <FileCheck className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm sm:text-base font-bold text-foreground">
+                                Donor Payment Instructions & Transfer Notes
+                              </h3>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Custom helper guidance shown above the receipt screenshot upload area on /donate.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* Actions Toolbar */}
-                    <div className="pt-4 border-t flex flex-wrap items-center justify-between gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={savingConfig}
-                        onClick={handleResetConfig}
-                        className="gap-2"
-                      >
-                        <RotateCcw className="h-4 w-4" /> Reset
-                      </Button>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            Transfer Instructions / Verification Guidance
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={editPaymentInstructions}
+                            onChange={(e) => setEditPaymentInstructions(e.target.value)}
+                            placeholder="Please use your name as the transfer reference and upload your receipt screenshot below."
+                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                          <p className="text-[11px] text-muted-foreground">
+                            Displayed on the donation checkout screen to reassure donors and guide receipt submission.
+                          </p>
+                        </div>
 
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={savingConfig}
-                        className="gap-2 px-5"
-                      >
-                        {savingConfig ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 animate-spin" /> Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4" /> Save Campaign Settings
-                          </>
-                        )}
-                      </Button>
+                        {/* Live Quote Preview */}
+                        <div className="rounded-xl border bg-muted/40 p-3.5 space-y-1">
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Preview on Donate Page:</p>
+                          <p className="text-xs text-foreground italic">
+                            "{editPaymentInstructions || "Please use your name as the transfer reference and upload your receipt screenshot below."}"
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bottom Action Toolbar */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl border bg-card shadow-xs">
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-semibold text-foreground">Campaign Settings</span> · Updates are published immediately.
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={savingConfig}
+                          onClick={handleResetConfig}
+                          className="gap-2"
+                        >
+                          <RotateCcw className="h-4 w-4" /> Reset
+                        </Button>
+
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={savingConfig}
+                          className="gap-2 px-5"
+                        >
+                          {savingConfig ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" /> Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4" /> Save Campaign Settings
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 </div>
 
                 {/* Live Public Preview Card (1 Col) */}
-                <div className="space-y-5">
+                <div className="space-y-5 lg:sticky lg:top-6 self-start">
                   <div className="rounded-2xl border bg-card p-5 shadow-xs space-y-4">
                     <div className="flex items-center justify-between border-b pb-3">
                       <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -2498,6 +2646,17 @@ function AdminPage() {
                       </div>
                     </div>
 
+                    <div className="pt-2 border-t flex items-center justify-between">
+                      <Link
+                        to="/donate"
+                        target="_blank"
+                        className="inline-flex items-center gap-1.5 text-xs text-primary font-medium hover:underline"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" /> View Public Donate Page
+                      </Link>
+                      <span className="text-[10px] text-muted-foreground">Auto-synced</span>
+                    </div>
+
                     <p className="text-[11px] text-muted-foreground italic">
                       Clicking "Save Campaign Settings" will automatically update these values on the live website.
                     </p>
@@ -2506,7 +2665,8 @@ function AdminPage() {
               </div>
 
               {/* ---------------- ADMIN SECURITY & CREDENTIALS SECTION ---------------- */}
-              <div className="rounded-2xl border bg-card p-5 sm:p-7 shadow-xs">
+              {(settingsTab === "all" || settingsTab === "security") && (
+                <div className="rounded-2xl border bg-card p-5 sm:p-7 shadow-xs">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b pb-4 mb-6">
                   <div>
                     <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
@@ -2643,8 +2803,9 @@ function AdminPage() {
                   </div>
                 </form>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
         </main>
       </div>
 

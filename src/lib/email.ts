@@ -4,6 +4,8 @@
  * whenever a donation, pledge, or inquiry is submitted.
  */
 
+import { SITE } from "@/lib/site";
+
 export interface DonationSubmissionData {
   full_name: string;
   email: string;
@@ -323,7 +325,7 @@ export async function sendDonationNotification(
         Delivered to <strong style="color: #64748b;">${escapeHtml(recipient)}</strong> for the JJT × SZABIST Fundraising Initiative.
       </p>
       <p style="margin: 4px 0 0 0;">
-        Official Hotline: 03219519360 • Email: jjtszabist.isb@gmail.com
+        Official Hotline: ${escapeHtml(SITE.donationPhone)} • Email: ${escapeHtml(SITE.contactEmail)}
       </p>
     </div>
 
@@ -441,7 +443,7 @@ ${escapeHtml(data.message || "(No message body provided)")}
         Delivered to <strong style="color: #64748b;">${escapeHtml(recipient)}</strong> for the JJT × SZABIST Fundraising Initiative.
       </p>
       <p style="margin: 4px 0 0 0;">
-        Official Hotline: 03219519360 • Email: jjtszabist.isb@gmail.com
+        Official Hotline: ${escapeHtml(SITE.donationPhone)} • Email: ${escapeHtml(SITE.contactEmail)}
       </p>
     </div>
 
