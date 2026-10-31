@@ -1,0 +1,2029 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  ShieldCheck,
+  PlusCircle,
+  Trash2,
+  CheckCircle,
+  Phone,
+  Building,
+  Calendar,
+  LogOut,
+  RefreshCw,
+  Coins,
+  Users,
+  MessageSquare,
+  ExternalLink,
+  LayoutDashboard,
+  Receipt,
+  Settings,
+  Search,
+  Menu,
+  X,
+  Target,
+  ChevronRight,
+  FileCheck,
+  UploadCloud,
+  Save,
+  RotateCcw,
+} from "lucide-react";
+import {
+  adminLogin,
+  getAdminData,
+  addContributionAdmin,
+  deleteContributionAdmin,
+  deleteDonationRequestAdmin,
+  updateCampaignConfigAdmin,
+  updateAdminCredentials,
+} from "@/lib/admin";
+import { uploadPaymentScreenshot } from "@/lib/upload";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { SITE, formatRs, useCampaignConfig, type CampaignConfig } from "@/lib/site";
+import { Button } from "@/components/ui/button";
+
+export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [
+      { title: "Admin Portal | JJT × SZABIST Community" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
+  component: AdminPage,
+});
+
+type ContributionItem = {
+  id: string;
+  donor_label: string;
+  amount: number;
+  purpose: string | null;
+  payment_proof_url: string | null;
+  received_on: string;
+};
+
+type DonationRequestItem = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  organization: string | null;
+  donor_type: string;
+  intended_amount: number | null;
+  message: string | null;
+  payment_proof_url: string | null;
+  created_at: string;
+};
+
+type ActiveView = "dashboard" | "contributions" | "requests" | "settings";
+
+function AdminPage() {
+  const queryClient = useQueryClient();
+  const publicConfig = useCampaignConfig();
+  const [token, setToken] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
+
+  // Campaign Configuration State (Dynamic)
+  const [config, setConfig] = useState<CampaignConfig>(publicConfig);
+  const [editConfigName, setEditConfigName] = useState(publicConfig.name);
+  const [editConfigSupporting, setEditConfigSupporting] = useState(publicConfig.supporting);
+  const [editConfigPhone, setEditConfigPhone] = useState(publicConfig.donationPhone);
+  const [editConfigEmail, setEditConfigEmail] = useState(publicConfig.contactEmail);
+  const [editConfigGoal, setEditConfigGoal] = useState(String(publicConfig.goal));
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  // Admin Credentials State
+  const [credEmail, setCredEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [savingCredentials, setSavingCredentials] = useState(false);
+
+  // Synchronize with public configuration query when available
+  useEffect(() => {
+    if (publicConfig) {
+      setConfig((prev) => ({
+        ...prev,
+        ...publicConfig,
+      }));
+      setEditConfigName(publicConfig.name);
+      setEditConfigSupporting(publicConfig.supporting);
+      setEditConfigPhone(publicConfig.donationPhone);
+      setEditConfigEmail(publicConfig.contactEmail);
+      setEditConfigGoal(String(publicConfig.goal));
+    }
+  }, [
+    publicConfig.name,
+    publicConfig.supporting,
+    publicConfig.donationPhone,
+    publicConfig.contactEmail,
+    publicConfig.goal,
+  ]);
+
+  // Navigation State
+  const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [donorTypeFilter, setDonorTypeFilter] = useState<string>("all");
+
+  // Login form state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Dashboard Data state
+  const [contributions, setContributions] = useState<ContributionItem[]>([]);
+  const [requests, setRequests] = useState<DonationRequestItem[]>([]);
+
+  // Receipt Preview Lightbox Modal State
+  const [viewReceiptModal, setViewReceiptModal] = useState<{
+    url: string;
+    donor: string;
+    amount?: number | null;
+    date?: string;
+  } | null>(null);
+
+  // Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    description: React.ReactNode;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: "destructive" | "warning" | "primary" | "default";
+    icon?: "danger" | "warning" | "success" | "logout" | "info";
+    loading?: boolean;
+    onConfirm: () => Promise<void> | void;
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
+
+  // Add Contribution Form State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [donorLabel, setDonorLabel] = useState("");
+  const [amount, setAmount] = useState("");
+  const [purpose, setPurpose] = useState("General fund");
+  const [receivedOn, setReceivedOn] = useState(new Date().toISOString().slice(0, 10));
+  const [manualReceiptPreview, setManualReceiptPreview] = useState<string | null>(null);
+  const [manualReceiptUploading, setManualReceiptUploading] = useState(false);
+
+  useEffect(() => {
+    const savedToken = sessionStorage.getItem("jjt_admin_token");
+    const savedEmail = sessionStorage.getItem("jjt_admin_email");
+    if (savedToken) {
+      setToken(savedToken);
+      if (savedEmail) setAdminEmail(savedEmail);
+      loadDashboard(savedToken);
+    }
+  }, []);
+
+  async function loadDashboard(authToken: string) {
+    setDataLoading(true);
+    try {
+      const res = await getAdminData({ data: authToken });
+      setContributions(res.contributions);
+      setRequests(res.donationRequests);
+      if (res.campaignConfig) {
+        setConfig(res.campaignConfig);
+        setEditConfigName(res.campaignConfig.name);
+        setEditConfigSupporting(res.campaignConfig.supporting);
+        setEditConfigPhone(res.campaignConfig.donationPhone);
+        setEditConfigEmail(res.campaignConfig.contactEmail);
+        setEditConfigGoal(String(res.campaignConfig.goal));
+      }
+      if (res.adminEmail) {
+        setAdminEmail(res.adminEmail);
+        setCredEmail(res.adminEmail);
+      }
+      setIsUnlocked(true);
+    } catch {
+      setIsUnlocked(false);
+      sessionStorage.removeItem("jjt_admin_token");
+      sessionStorage.removeItem("jjt_admin_email");
+      toast.error("Session expired. Please sign in again.");
+    } finally {
+      setDataLoading(false);
+    }
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await adminLogin({
+        data: {
+          email: email.trim(),
+          password: password.trim(),
+        },
+      });
+
+      sessionStorage.setItem("jjt_admin_token", res.token);
+      sessionStorage.setItem("jjt_admin_email", res.email);
+      setToken(res.token);
+      setAdminEmail(res.email);
+      await loadDashboard(res.token);
+      toast.success("Welcome back! Admin portal unlocked");
+    } catch {
+      toast.error("Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleLogout() {
+    sessionStorage.removeItem("jjt_admin_token");
+    sessionStorage.removeItem("jjt_admin_email");
+    setToken("");
+    setAdminEmail("");
+    setIsUnlocked(false);
+    toast.info("Logged out successfully");
+  }
+
+  async function handleAddContribution(e: React.FormEvent) {
+    e.preventDefault();
+    const numAmount = Number(amount);
+    if (!numAmount || numAmount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    let receiptUrl: string | undefined = undefined;
+    if (manualReceiptPreview) {
+      setManualReceiptUploading(true);
+      try {
+        const uploadRes = await uploadPaymentScreenshot({
+          data: {
+            fileBase64: manualReceiptPreview,
+            fileName: `manual_receipt_${Date.now()}`,
+          },
+        });
+        receiptUrl = uploadRes.url;
+      } catch (err) {
+        console.warn("Could not upload manual receipt to CDN:", err);
+      } finally {
+        setManualReceiptUploading(false);
+      }
+    }
+
+    try {
+      await addContributionAdmin({
+        data: {
+          token,
+          donor_label: donorLabel.trim() || "Anonymous",
+          amount: numAmount,
+          purpose: purpose.trim() || "General fund",
+          received_on: receivedOn,
+          payment_proof_url: receiptUrl,
+        },
+      });
+      toast.success("Contribution recorded to public ledger");
+      setShowAddModal(false);
+      setDonorLabel("");
+      setAmount("");
+      setPurpose("General fund");
+      setManualReceiptPreview(null);
+      await loadDashboard(token);
+    } catch {
+      toast.error("Failed to add contribution");
+    }
+  }
+
+  function promptDeleteContribution(c: ContributionItem) {
+    setConfirmModal({
+      open: true,
+      title: "Remove Contribution Record?",
+      description: (
+        <span>
+          Are you sure you want to permanently remove <strong className="text-foreground">{c.donor_label}</strong>'s contribution of{" "}
+          <strong className="text-primary font-semibold">{formatRs(c.amount)}</strong> from the public ledger? This will subtract it from the total funds raised.
+        </span>
+      ),
+      confirmText: "Yes, Remove Entry",
+      cancelText: "Keep Contribution",
+      variant: "destructive",
+      icon: "danger",
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, loading: true }));
+        try {
+          await deleteContributionAdmin({ data: { token, id: c.id } });
+          toast.success(`Removed contribution for ${c.donor_label}`);
+          setContributions((prev) => prev.filter((item) => item.id !== c.id));
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+        } catch {
+          toast.error("Failed to delete contribution");
+          setConfirmModal((prev) => ({ ...prev, loading: false }));
+        }
+      },
+    });
+  }
+
+  function promptDismissRequest(r: DonationRequestItem) {
+    setConfirmModal({
+      open: true,
+      title: "Dismiss Donation Inquiry?",
+      description: (
+        <span>
+          Are you sure you want to dismiss the inquiry from <strong className="text-foreground">{r.full_name}</strong> ({r.email})?
+          {r.intended_amount ? (
+            <span> Intended pledge was <strong className="text-foreground">{formatRs(r.intended_amount)}</strong>.</span>
+          ) : null}
+        </span>
+      ),
+      confirmText: "Yes, Dismiss Inquiry",
+      cancelText: "Keep Inquiry",
+      variant: "destructive",
+      icon: "warning",
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, loading: true }));
+        try {
+          await deleteDonationRequestAdmin({ data: { token, id: r.id } });
+          toast.success(`Dismissed inquiry from ${r.full_name}`);
+          setRequests((prev) => prev.filter((item) => item.id !== r.id));
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+        } catch {
+          toast.error("Failed to dismiss inquiry");
+          setConfirmModal((prev) => ({ ...prev, loading: false }));
+        }
+      },
+    });
+  }
+
+  function promptConfirmPledge(req: DonationRequestItem) {
+    const confirmAmount = req.intended_amount && req.intended_amount > 0 ? req.intended_amount : 20000;
+    setConfirmModal({
+      open: true,
+      title: "Publish Contribution to Ledger?",
+      description: (
+        <span>
+          This will immediately post a verified contribution of <strong className="text-primary font-semibold">{formatRs(confirmAmount)}</strong> for{" "}
+          <strong className="text-foreground">{req.full_name}</strong> onto the public /progress tracker.
+          {req.payment_proof_url && (
+            <span className="block mt-2 font-medium text-emerald-600 dark:text-emerald-400 text-xs">
+              ✓ Attached payment receipt will be permanently linked to this record.
+            </span>
+          )}
+        </span>
+      ),
+      confirmText: "Publish to Public Ledger",
+      cancelText: "Cancel",
+      variant: "primary",
+      icon: "success",
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, loading: true }));
+        try {
+          await addContributionAdmin({
+            data: {
+              token,
+              donor_label: req.full_name,
+              amount: confirmAmount,
+              purpose: req.message ? `Pledge: ${req.message.slice(0, 50)}` : "Direct Community Pledge",
+              received_on: new Date().toISOString().slice(0, 10),
+              payment_proof_url: req.payment_proof_url || undefined,
+            },
+          });
+          toast.success(`Confirmed ${formatRs(confirmAmount)} for ${req.full_name}`);
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          await loadDashboard(token);
+        } catch {
+          toast.error("Failed to confirm contribution");
+          setConfirmModal((prev) => ({ ...prev, loading: false }));
+        }
+      },
+    });
+  }
+
+  function promptLogout() {
+    setConfirmModal({
+      open: true,
+      title: "Sign Out of Admin Portal?",
+      description: "Are you sure you want to end your current session? You will need your administrative credentials to sign back in.",
+      confirmText: "Yes, Sign Out",
+      cancelText: "Stay Signed In",
+      variant: "destructive",
+      icon: "logout",
+      onConfirm: () => {
+        setConfirmModal((prev) => ({ ...prev, open: false }));
+        handleLogout();
+      },
+    });
+  }
+
+  async function handleSaveConfig(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editConfigName.trim()) {
+      toast.error("Campaign name cannot be empty");
+      return;
+    }
+    const numGoal = Number(editConfigGoal);
+    if (!numGoal || isNaN(numGoal) || numGoal <= 0) {
+      toast.error("Please enter a valid goal amount greater than 0");
+      return;
+    }
+    if (!editConfigEmail.trim() || !editConfigEmail.includes("@")) {
+      toast.error("Please enter a valid contact email");
+      return;
+    }
+
+    setSavingConfig(true);
+    try {
+      const res = await updateCampaignConfigAdmin({
+        data: {
+          token,
+          name: editConfigName.trim(),
+          supporting: editConfigSupporting.trim(),
+          donation_phone: editConfigPhone.trim(),
+          contact_email: editConfigEmail.trim(),
+          goal: Math.round(numGoal),
+        },
+      });
+
+      if (res.success && res.config) {
+        setConfig({
+          ...res.config,
+          updatedAt: new Date().toISOString(),
+        });
+        queryClient.invalidateQueries({ queryKey: ["campaign-config"] });
+        toast.success("Campaign configuration saved successfully!");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Failed to update campaign configuration");
+    } finally {
+      setSavingConfig(false);
+    }
+  }
+
+  function handleResetConfig() {
+    setEditConfigName(config.name);
+    setEditConfigSupporting(config.supporting);
+    setEditConfigPhone(config.donationPhone);
+    setEditConfigEmail(config.contactEmail);
+    setEditConfigGoal(String(config.goal));
+    toast.info("Form reset to currently saved configuration.");
+  }
+
+  function handlePromptUpdateCredentials(e: React.FormEvent) {
+    e.preventDefault();
+    const cleanNewEmail = credEmail.trim().toLowerCase();
+    if (!cleanNewEmail || !cleanNewEmail.includes("@")) {
+      toast.error("Please enter a valid admin email address");
+      return;
+    }
+    if (!currentPassword.trim()) {
+      toast.error("Current password is required to verify changes");
+      return;
+    }
+    if (newPassword) {
+      if (newPassword.length < 6) {
+        toast.error("New password must be at least 6 characters long");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        toast.error("New password and confirm password do not match");
+        return;
+      }
+    }
+
+    setConfirmModal({
+      open: true,
+      title: "Update Admin Credentials?",
+      description: (
+        <span>
+          You are changing the admin login email to{" "}
+          <strong className="text-foreground">{cleanNewEmail}</strong>.
+          {newPassword ? <span> Your administrator portal password will also be updated.</span> : null}
+        </span>
+      ),
+      confirmText: "Yes, Update Credentials",
+      cancelText: "Cancel",
+      variant: "warning",
+      icon: "warning",
+      onConfirm: async () => {
+        setSavingCredentials(true);
+        setConfirmModal((prev) => ({ ...prev, loading: true }));
+        try {
+          const res = await updateAdminCredentials({
+            data: {
+              token,
+              new_email: cleanNewEmail,
+              current_password: currentPassword.trim(),
+              new_password: newPassword.trim() || undefined,
+            },
+          });
+
+          if (res.success) {
+            setToken(res.token);
+            setAdminEmail(res.email);
+            setCredEmail(res.email);
+            sessionStorage.setItem("jjt_admin_token", res.token);
+            sessionStorage.setItem("jjt_admin_email", res.email);
+
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+
+            setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+            toast.success("Admin email and password updated successfully!");
+          }
+        } catch (err: any) {
+          console.error(err);
+          toast.error(err?.message || "Failed to update admin credentials. Check your current password.");
+          setConfirmModal((prev) => ({ ...prev, loading: false }));
+        } finally {
+          setSavingCredentials(false);
+        }
+      },
+    });
+  }
+
+  const totalRaised = contributions.reduce((s, c) => s + c.amount, 0);
+  const activeGoal = config.goal || SITE.goal;
+  const percentGoal = Math.min(100, Math.round((totalRaised / activeGoal) * 100));
+
+  // Filtered Lists
+  const filteredContributions = contributions.filter((c) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      c.donor_label.toLowerCase().includes(q) ||
+      (c.purpose && c.purpose.toLowerCase().includes(q))
+    );
+  });
+
+  const filteredRequests = requests.filter((r) => {
+    const matchesType = donorTypeFilter === "all" || r.donor_type === donorTypeFilter;
+    if (!matchesType) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      r.full_name.toLowerCase().includes(q) ||
+      r.email.toLowerCase().includes(q) ||
+      (r.organization && r.organization.toLowerCase().includes(q)) ||
+      (r.message && r.message.toLowerCase().includes(q))
+    );
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* LOGIN PAGE (No Navbar, No Footer, Split-screen with photo on left)         */
+  /* -------------------------------------------------------------------------- */
+  if (!isUnlocked) {
+    return (
+      <div className="flex min-h-screen w-full bg-background">
+        {/* Left Side: Brand Imagery & Mission Statement */}
+        <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-deep p-12 text-deep-foreground lg:flex">
+          <img
+            src="/classroom-background.png"
+            alt="Children in classroom"
+            className="absolute inset-0 h-full w-full object-cover opacity-35 filter brightness-75 contrast-125"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-deep via-deep/80 to-deep/40" />
+
+          {/* Top Brand Tag */}
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1 text-xs font-medium text-primary">
+              <ShieldCheck className="h-4 w-4" /> JJT × SZABIST Community Portal
+            </div>
+          </div>
+
+          {/* Middle Quote */}
+          <div className="relative z-10 max-w-lg">
+            <p className="font-serif text-3xl font-semibold leading-snug md:text-4xl text-deep-foreground">
+              “Education is the single greatest equalizer for every child in Pakistan.”
+            </p>
+            <p className="mt-4 text-base text-deep-foreground/80 leading-relaxed">
+              Serving orphans, child labourers, and street children since 2014 under the Trust Act 1882 with 100% free quality education.
+            </p>
+          </div>
+
+          {/* Bottom Trust Credentials */}
+          <div className="relative z-10 flex items-center gap-6 border-t border-deep-foreground/15 pt-6 text-xs text-deep-foreground/70">
+            <span>Trust Act 1882 Registered</span>
+            <span>•</span>
+            <span>FBR Tax Exempt</span>
+            <span>•</span>
+            <span>Islamabad, Pakistan</span>
+          </div>
+        </div>
+
+        {/* Right Side: Professional Login Form */}
+        <div className="flex w-full flex-col justify-between p-5 sm:p-10 lg:w-1/2 lg:p-16">
+          <div className="flex items-center justify-between">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground transition hover:text-foreground"
+            >
+              ← Back to public website
+            </Link>
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary lg:hidden">
+              Admin Portal
+            </span>
+          </div>
+
+          <div className="mx-auto w-full max-w-md py-6 sm:py-8">
+            <div className="mb-6 sm:mb-8 text-center sm:text-left">
+              <img
+                src="/logo.png"
+                alt="Junior Jinnah Trust Logo"
+                className="h-14 w-14 sm:h-16 sm:w-16 rounded-full object-cover border-2 border-primary/60 shadow-md mx-auto sm:mx-0"
+              />
+              <h1 className="mt-4 font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+                Staff & Admin Sign In
+              </h1>
+              <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Sign in with your authorized email and password to manage community contributions and donor pledges.
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Email Address
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@jjtrust.org"
+                    className="w-full rounded-lg border border-input bg-background px-3.5 py-2.5 pl-10 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/30"
+                  />
+                  <Mail className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Password
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full rounded-lg border border-input bg-background px-3.5 py-2.5 pl-10 pr-10 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/30"
+                  />
+                  <Lock className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-2.5 text-muted-foreground hover:text-foreground"
+                    aria-label="Toggle password visibility"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="mt-2 w-full py-2.5 font-medium flex items-center justify-center gap-2"
+              >
+                {loading ? "Authenticating…" : "Sign In to Portal"}
+                {!loading && <ArrowRight className="h-4 w-4" />}
+              </Button>
+            </form>
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} {config.name || SITE.name}. All rights reserved.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* REDESIGNED ADMIN PORTAL WITH SIDEBAR LAYOUT                                 */
+  /* -------------------------------------------------------------------------- */
+  const navItems = [
+    { id: "dashboard" as const, label: "Overview", icon: LayoutDashboard },
+    {
+      id: "contributions" as const,
+      label: "Contributions",
+      icon: Receipt,
+      badge: contributions.length,
+    },
+    {
+      id: "requests" as const,
+      label: "Inquiries & Pledges",
+      icon: MessageSquare,
+      badge: requests.length,
+    },
+    { id: "settings" as const, label: "Campaign Info", icon: Settings },
+  ];
+
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* -------------------- SIDEBAR (Desktop & Mobile Drawer) -------------------- */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-card transition-transform duration-300 md:static md:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Sidebar Brand Header */}
+        <div className="flex h-16 items-center justify-between border-b px-6">
+          <Link to="/" className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="JJT Logo"
+              className="h-9 w-9 shrink-0 rounded-full object-cover border border-primary/40 shadow-xs"
+            />
+            <div>
+              <span className="block font-serif text-sm font-bold leading-tight text-foreground">
+                JJT × SZABIST
+              </span>
+              <span className="block text-[11px] font-medium text-muted-foreground">
+                Campaign Admin
+              </span>
+            </div>
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Navigation Links */}
+        <div className="flex-1 overflow-y-auto px-4 py-6">
+          <div className="mb-2 px-3 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            Management
+          </div>
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveView(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge !== undefined && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        isActive
+                          ? "bg-primary-foreground/20 text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="mt-8 mb-2 px-3 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+            Quick Links
+          </div>
+          <nav className="space-y-1">
+            <Link
+              to="/"
+              target="_blank"
+              className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition"
+            >
+              <div className="flex items-center gap-3">
+                <ExternalLink className="h-4 w-4" />
+                <span>Live Website</span>
+              </div>
+            </Link>
+            <a
+              href="https://jjtrust.org/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition"
+            >
+              <div className="flex items-center gap-3">
+                <Building className="h-4 w-4" />
+                <span>JJT Official Site</span>
+              </div>
+            </a>
+          </nav>
+        </div>
+
+        {/* Sidebar Footer: User Profile & Logout */}
+        <div className="border-t p-4 bg-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-xs">
+                {(adminEmail[0] || "A").toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-medium text-foreground">
+                  {adminEmail || "Administrator"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">Admin Access</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={promptLogout}
+              className="shrink-0 text-destructive hover:bg-destructive/10"
+              title="Log out"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Backdrop for mobile drawer */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* -------------------- MAIN WORKSPACE AREA -------------------- */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Top Header Bar */}
+        <header className="flex h-16 items-center justify-between border-b bg-card px-4 sm:px-6">
+          <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden h-9 w-9 shrink-0"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open navigation sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm truncate">
+              <span className="text-muted-foreground hidden sm:inline">Admin</span>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground hidden sm:inline" />
+              <span className="font-semibold capitalize text-foreground truncate">
+                {activeView === "dashboard" ? "Overview" : activeView}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadDashboard(token)}
+              disabled={dataLoading}
+              className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5"
+              title="Refresh Data"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${dataLoading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh Data</span>
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+              className="h-8 sm:h-9 px-2.5 sm:px-3 text-xs sm:text-sm flex items-center gap-1.5 shadow-xs"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Record Contribution</span>
+              <span className="sm:hidden">Record</span>
+            </Button>
+          </div>
+        </header>
+
+        {/* View Content (Scrollable Container) */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-muted/15">
+          {/* ---------------- VIEW 1: DASHBOARD OVERVIEW ---------------- */}
+          {activeView === "dashboard" && (
+            <div className="space-y-6 sm:space-y-8">
+              {/* Welcome Banner */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl bg-gradient-to-r from-deep to-deep-2 p-5 sm:p-8 text-deep-foreground shadow-sm">
+                <div>
+                  <h1 className="font-serif text-xl sm:text-2xl font-bold md:text-3xl leading-snug">
+                    Campaign Performance Dashboard
+                  </h1>
+                  <p className="mt-1.5 sm:mt-2 max-w-xl text-xs sm:text-sm text-deep-foreground/80 leading-relaxed">
+                    Live overview for the Classrooms for Every Child initiative supporting Junior Jinnah Trust.
+                  </p>
+                </div>
+                <div className="w-full sm:w-auto rounded-xl bg-card/10 backdrop-blur-md px-4 sm:px-5 py-2.5 sm:py-3 border border-deep-foreground/10 text-left sm:text-right shrink-0">
+                  <p className="text-[11px] sm:text-xs uppercase font-medium text-primary">Goal Target</p>
+                  <p className="font-serif text-xl sm:text-2xl font-bold">{formatRs(activeGoal)}</p>
+                </div>
+              </div>
+
+              {/* KPI Cards Grid */}
+              <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border bg-card p-5 shadow-xs transition hover:shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Total Raised
+                    </p>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                      <Coins className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <p className="mt-3 font-serif text-3xl font-bold text-foreground">
+                    {formatRs(totalRaised)}
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 text-xs">
+                    <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${percentGoal}%` }}
+                      />
+                    </div>
+                    <span className="font-semibold text-primary">{percentGoal}%</span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-card p-5 shadow-xs transition hover:shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Confirmed Donors
+                    </p>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                      <Users className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <p className="mt-3 font-serif text-3xl font-bold text-foreground">
+                    {contributions.length}
+                  </p>
+                  <p className="mt-3 text-xs text-muted-foreground">Publicly recorded supporters</p>
+                </div>
+
+                <div className="rounded-xl border bg-card p-5 shadow-xs transition hover:shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Pledges & Inquiries
+                    </p>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                      <MessageSquare className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <p className="mt-3 font-serif text-3xl font-bold text-foreground">
+                    {requests.length}
+                  </p>
+                  <p className="mt-3 text-xs text-muted-foreground">Incoming messages from /contact & /donate</p>
+                </div>
+
+                <div className="rounded-xl border bg-card p-5 shadow-xs transition hover:shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Remaining to Goal
+                    </p>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                      <Target className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <p className="mt-3 font-serif text-3xl font-bold text-foreground">
+                    {formatRs(Math.max(0, activeGoal - totalRaised))}
+                  </p>
+                  <p className="mt-3 text-xs text-muted-foreground">To reach {formatRs(activeGoal)}</p>
+                </div>
+              </div>
+
+              {/* Split Feed: Recent Contributions + Recent Pledges */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Recent Contributions */}
+                <div className="rounded-xl border bg-card p-6 shadow-xs">
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <div>
+                      <h2 className="font-semibold text-foreground">Recent Contributions</h2>
+                      <p className="text-xs text-muted-foreground">Latest donations on public record</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveView("contributions")}
+                      className="text-xs text-primary"
+                    >
+                      View all ({contributions.length})
+                    </Button>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {contributions.slice(0, 4).map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between rounded-lg border bg-muted/20 p-3"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-foreground">{c.donor_label}</p>
+                            {c.payment_proof_url && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setViewReceiptModal({
+                                    url: c.payment_proof_url!,
+                                    donor: c.donor_label,
+                                    amount: c.amount,
+                                    date: c.received_on,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-500/20 transition"
+                                title="View payment receipt"
+                              >
+                                <FileCheck className="h-3 w-3" /> Receipt
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{c.purpose || "General fund"}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-serif font-semibold text-foreground">{formatRs(c.amount)}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {new Date(c.received_on).toLocaleDateString("en-PK")}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    {contributions.length === 0 && (
+                      <p className="py-6 text-center text-sm text-muted-foreground">No contributions yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Recent Pledges */}
+                <div className="rounded-xl border bg-card p-6 shadow-xs">
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <div>
+                      <h2 className="font-semibold text-foreground">Recent Inquiries & Messages</h2>
+                      <p className="text-xs text-muted-foreground">Pending messages from /contact & /donate</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveView("requests")}
+                      className="text-xs text-primary"
+                    >
+                      View all ({requests.length})
+                    </Button>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {requests.slice(0, 4).map((r) => (
+                      <div
+                        key={r.id}
+                        className="flex items-center justify-between rounded-lg border bg-muted/20 p-3"
+                      >
+                        <div className="min-w-0 pr-2">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-medium text-foreground">{r.full_name}</p>
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                                r.donor_type === "contact"
+                                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                                  : "bg-primary/10 text-primary"
+                              }`}
+                            >
+                              {r.donor_type === "contact" ? "Contact Inquiry" : r.donor_type}
+                            </span>
+                            {r.payment_proof_url && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setViewReceiptModal({
+                                    url: r.payment_proof_url!,
+                                    donor: r.full_name,
+                                    amount: r.intended_amount,
+                                    date: r.created_at,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.2 text-[10px] font-semibold text-emerald-700 hover:bg-emerald-500/25 transition"
+                                title="View Payment Proof"
+                              >
+                                <FileCheck className="h-3 w-3" /> Proof
+                              </button>
+                            )}
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground">{r.email}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => promptConfirmPledge(r)}
+                            className="h-8 text-xs"
+                          >
+                            <CheckCircle className="mr-1 h-3.5 w-3.5 text-primary" /> Confirm
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {requests.length === 0 && (
+                      <p className="py-6 text-center text-sm text-muted-foreground">No inquiries yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ---------------- VIEW 2: CONTRIBUTIONS LEDGER ---------------- */}
+          {activeView === "contributions" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Public Contributions Ledger</h1>
+                  <p className="text-sm text-muted-foreground">
+                    All donations displayed publicly on the campaign progress page.
+                  </p>
+                </div>
+
+                <div className="relative w-full max-w-xs sm:w-auto">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by donor or purpose..."
+                    className="w-full rounded-lg border border-input bg-card px-3 py-2 pl-9 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                  />
+                  <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-muted-foreground sm:hidden px-1">
+                <span>Showing {filteredContributions.length} records</span>
+                <span>Swipe table horizontally →</span>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border bg-card shadow-xs">
+                <table className="w-full min-w-[620px] text-left text-sm">
+                  <thead className="border-b bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="p-4 font-semibold">Date</th>
+                      <th className="p-4 font-semibold">Donor / Supporter</th>
+                      <th className="p-4 font-semibold">Designated Purpose</th>
+                      <th className="p-4 text-right font-semibold">Amount</th>
+                      <th className="p-4 text-right font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredContributions.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-12 text-center text-muted-foreground">
+                          {searchQuery
+                            ? "No matching contributions found."
+                            : "No contributions recorded yet."}
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredContributions.map((c) => (
+                        <tr key={c.id} className="border-t hover:bg-muted/30 transition">
+                          <td className="p-4 whitespace-nowrap text-muted-foreground">
+                            {new Date(c.received_on).toLocaleDateString("en-PK", {
+                              dateStyle: "medium",
+                            })}
+                          </td>
+                          <td className="p-4 font-medium text-foreground">
+                            <div className="flex items-center gap-2">
+                              <span>{c.donor_label}</span>
+                              {c.payment_proof_url && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setViewReceiptModal({
+                                      url: c.payment_proof_url!,
+                                      donor: c.donor_label,
+                                      amount: c.amount,
+                                      date: c.received_on,
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/20 transition"
+                                  title="View verified payment receipt"
+                                >
+                                  <FileCheck className="h-3 w-3" /> Receipt
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 text-muted-foreground">{c.purpose || "General fund"}</td>
+                          <td className="p-4 text-right font-serif text-base font-semibold text-foreground">
+                            {formatRs(c.amount)}
+                          </td>
+                          <td className="p-4 text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => promptDeleteContribution(c)}
+                              className="text-destructive hover:bg-destructive/10"
+                              title="Delete from public ledger"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ---------------- VIEW 3: PLEDGES & LEADS ---------------- */}
+          {activeView === "requests" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Incoming Inquiries & Pledges</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Messages and inquiries submitted through the /contact and /donate forms.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <select
+                    value={donorTypeFilter}
+                    onChange={(e) => setDonorTypeFilter(e.target.value)}
+                    className="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="contact">Contact Inquiries</option>
+                    <option value="individual">Individual</option>
+                    <option value="company">Company</option>
+                    <option value="foundation">Foundation</option>
+                  </select>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search inquiries..."
+                      className="rounded-lg border border-input bg-card px-3 py-2 pl-9 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                    />
+                    <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {filteredRequests.length === 0 ? (
+                  <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+                    <MessageSquare className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-base font-medium">No matching inquiries found.</p>
+                  </div>
+                ) : (
+                  filteredRequests.map((r) => (
+                    <div
+                      key={r.id}
+                      className="rounded-xl border bg-card p-4 sm:p-6 shadow-xs transition hover:shadow-sm"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                            <h3 className="text-base sm:text-lg font-semibold text-foreground">{r.full_name}</h3>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase ${
+                                r.donor_type === "contact"
+                                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                                  : "bg-primary/10 text-primary"
+                              }`}
+                            >
+                              {r.donor_type === "contact" ? "Contact Inquiry" : r.donor_type}
+                            </span>
+                          </div>
+
+                          <div className="mt-2.5 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                            <a
+                              href={`mailto:${r.email}`}
+                              className="inline-flex items-center gap-1.5 hover:text-foreground"
+                            >
+                              <Mail className="h-4 w-4 text-primary" /> {r.email}
+                            </a>
+                            {r.phone && (
+                              <a
+                                href={`tel:${r.phone}`}
+                                className="inline-flex items-center gap-1.5 hover:text-foreground"
+                              >
+                                <Phone className="h-4 w-4 text-primary" /> {r.phone}
+                              </a>
+                            )}
+                            {r.organization && (
+                              <span className="inline-flex items-center gap-1.5">
+                                <Building className="h-4 w-4" /> {r.organization}
+                              </span>
+                            )}
+                            <span className="inline-flex items-center gap-1.5">
+                              <Calendar className="h-4 w-4" />{" "}
+                              {new Date(r.created_at).toLocaleString("en-PK")}
+                            </span>
+                          </div>
+
+                          {r.intended_amount && (
+                            <p className="mt-3 text-sm font-medium text-foreground">
+                              Intended Pledge:{" "}
+                              <span className="font-serif text-lg font-bold text-primary">
+                                {formatRs(r.intended_amount)}
+                              </span>
+                            </p>
+                          )}
+
+                          {r.message && (
+                            <div className="mt-3 rounded-lg bg-muted/60 p-3 text-sm italic text-foreground/85">
+                              "{r.message}"
+                            </div>
+                          )}
+
+                          {r.payment_proof_url && (
+                            <div className="mt-3.5 flex flex-wrap items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                              <img
+                                src={r.payment_proof_url}
+                                alt="Payment proof"
+                                className="h-14 w-14 rounded-md border object-cover cursor-pointer hover:opacity-85 transition shadow-xs bg-background"
+                                onClick={() =>
+                                  setViewReceiptModal({
+                                    url: r.payment_proof_url!,
+                                    donor: r.full_name,
+                                    amount: r.intended_amount,
+                                    date: r.created_at,
+                                  })
+                                }
+                              />
+                              <div className="min-w-0 flex-1">
+                                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                  <FileCheck className="h-3.5 w-3.5" /> Payment Receipt Attached
+                                </span>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Uploaded via Cloudinary CDN • Verify transaction before confirming
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 gap-1.5 text-xs shrink-0"
+                                onClick={() =>
+                                  setViewReceiptModal({
+                                    url: r.payment_proof_url!,
+                                    donor: r.full_name,
+                                    amount: r.intended_amount,
+                                    date: r.created_at,
+                                  })
+                                }
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Inspect Receipt
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-0 border-border/50 justify-end">
+                          {r.intended_amount && r.intended_amount > 0 ? (
+                            <Button
+                              size="sm"
+                              onClick={() => promptConfirmPledge(r)}
+                              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5"
+                            >
+                              <CheckCircle className="h-4 w-4" /> Confirm to Ledger
+                            </Button>
+                          ) : (
+                            <a
+                              href={`mailto:${r.email}?subject=${encodeURIComponent("Re: Junior Jinnah Trust Inquiry")}`}
+                              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-xs hover:bg-primary/90 transition"
+                            >
+                              <Mail className="h-3.5 w-3.5" /> Reply by Email
+                            </a>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => promptDismissRequest(r)}
+                            className="text-destructive hover:bg-destructive/10 shrink-0"
+                            title="Dismiss inquiry"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ---------------- VIEW 4: CAMPAIGN CONFIGURATION (DYNAMIC) ---------------- */}
+          {activeView === "settings" && (
+            <div className="w-full space-y-6">
+              {/* Header Banner */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Campaign Configuration</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Customize campaign branding, targets, and public donor contact details in real-time.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live on Website
+                  </span>
+                  {config.updatedAt && (
+                    <span className="text-xs text-muted-foreground hidden sm:inline">
+                      Updated: {new Date(config.updatedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* Form Card (2 Cols) */}
+                <div className="lg:col-span-2 rounded-2xl border bg-card p-5 sm:p-7 shadow-xs">
+                  <div className="flex items-center justify-between border-b pb-4 mb-6">
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground">Edit Parameters</h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Changes will immediately reflect across the public website and admin dashboard.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSaveConfig} className="space-y-5">
+                    {/* Campaign Identity */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="sm:col-span-2 space-y-1.5">
+                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                          Campaign Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editConfigName}
+                          onChange={(e) => setEditConfigName(e.target.value)}
+                          placeholder="e.g. JJT × SZABIST Community"
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                          Shown in the main header, footer copyright, and page titles.
+                        </p>
+                      </div>
+
+                      <div className="sm:col-span-2 space-y-1.5">
+                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                          Beneficiary Trust / Tagline *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editConfigSupporting}
+                          onChange={(e) => setEditConfigSupporting(e.target.value)}
+                          placeholder="e.g. supporting Junior Jinnah Trust"
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                          Appears beneath the campaign title in the navigation bar and footer.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Target Goal */}
+                    <div className="pt-2 border-t space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                          Fundraising Goal Target (PKR) *
+                        </label>
+                        <span className="text-xs font-semibold text-primary">
+                          Preview: {formatRs(Number(editConfigGoal) || 0)}
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
+                          Rs
+                        </span>
+                        <input
+                          type="number"
+                          required
+                          min={1000}
+                          step={1000}
+                          value={editConfigGoal}
+                          onChange={(e) => setEditConfigGoal(e.target.value)}
+                          placeholder="100000"
+                          className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Used to calculate progress rings, percentage completed, and remaining funds needed across the site.
+                      </p>
+                    </div>
+
+                    {/* Contact Details */}
+                    <div className="pt-2 border-t grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                          Donation Contact Hotline *
+                        </label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input
+                            type="text"
+                            required
+                            value={editConfigPhone}
+                            onChange={(e) => setEditConfigPhone(e.target.value)}
+                            placeholder="03219519360"
+                            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Hotline for inquiries, WhatsApp messages, and direct mobile transfers.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                          Official Contact Email *
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input
+                            type="email"
+                            required
+                            value={editConfigEmail}
+                            onChange={(e) => setEditConfigEmail(e.target.value)}
+                            placeholder="jjtszabist.isb@gmail.com"
+                            className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Target for the 1-click Gmail composer and questions from donors.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions Toolbar */}
+                    <div className="pt-4 border-t flex flex-wrap items-center justify-between gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={savingConfig}
+                        onClick={handleResetConfig}
+                        className="gap-2"
+                      >
+                        <RotateCcw className="h-4 w-4" /> Reset
+                      </Button>
+
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={savingConfig}
+                        className="gap-2 px-5"
+                      >
+                        {savingConfig ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 animate-spin" /> Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4" /> Save Campaign Settings
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Live Public Preview Card (1 Col) */}
+                <div className="space-y-5">
+                  <div className="rounded-2xl border bg-card p-5 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b pb-3">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Eye className="h-4 w-4 text-primary" /> Live Public Preview
+                      </h3>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        Simulated
+                      </span>
+                    </div>
+
+                    {/* Header Simulation */}
+                    <div className="rounded-xl border bg-muted/40 p-3 space-y-1">
+                      <p className="text-[10px] uppercase font-semibold text-muted-foreground">Header & Brand</p>
+                      <div className="flex items-center gap-2">
+                        <img src="/logo.png" alt="Logo" className="h-7 w-7 rounded-full object-cover border border-primary" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {editConfigName || "Campaign Name"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {editConfigSupporting || "Supporting text"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Target Simulation */}
+                    <div className="rounded-xl border bg-muted/40 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] uppercase font-semibold text-muted-foreground">Target Goal</p>
+                        <p className="font-serif text-sm font-bold text-foreground">
+                          {formatRs(Number(editConfigGoal) || 0)}
+                        </p>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{
+                            width: `${Math.min(100, Math.round((totalRaised / (Number(editConfigGoal) || 1)) * 100))}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Raised: {formatRs(totalRaised)}</span>
+                        <span>
+                          {Math.round((totalRaised / (Number(editConfigGoal) || 1)) * 100)}% of goal
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Contact Links Simulation */}
+                    <div className="rounded-xl border bg-muted/40 p-3 space-y-2 text-xs">
+                      <p className="text-[10px] uppercase font-semibold text-muted-foreground">Public Contacts</p>
+                      <div className="flex items-center gap-2 text-foreground font-medium truncate">
+                        <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="truncate">{editConfigPhone || "Hotline"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-foreground font-medium truncate">
+                        <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="truncate">{editConfigEmail || "Email"}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Clicking "Save Campaign Settings" will automatically update these values on the live website.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ---------------- ADMIN SECURITY & CREDENTIALS SECTION ---------------- */}
+              <div className="rounded-2xl border bg-card p-5 sm:p-7 shadow-xs">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b pb-4 mb-6">
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-primary" /> Admin Security & Credentials
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Update your administrator sign-in email address and portal access password.
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Encrypted Neon Storage
+                  </span>
+                </div>
+
+                <form onSubmit={handlePromptUpdateCredentials} className="space-y-5 max-w-3xl">
+                  {/* Admin Email */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Administrator Login Email *
+                    </label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="email"
+                        required
+                        value={credEmail}
+                        onChange={(e) => setCredEmail(e.target.value)}
+                        placeholder="admin@jjtrust.org"
+                        className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      The official email address required to unlock this admin dashboard.
+                    </p>
+                  </div>
+
+                  {/* Password Change Fields */}
+                  <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                        New Password (optional)
+                      </label>
+                      <div className="relative">
+                        <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input
+                          type={showNewPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Leave blank to keep unchanged"
+                          className="w-full rounded-lg border border-input bg-background pl-9 pr-10 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          tabIndex={-1}
+                          title={showNewPassword ? "Hide password" : "Show password"}
+                        >
+                          {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">Minimum 6 characters. Leave blank if not changing.</p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input
+                          type={showNewPassword ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Re-type new password"
+                          className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        />
+                      </div>
+                      {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                        <p className="text-[11px] text-destructive">Passwords do not match.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Current Password Verification */}
+                  <div className="pt-2 border-t space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Current Password (Required for confirmation) *
+                    </label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type={showCurrentPassword ? "text" : "password"}
+                        required
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Enter current password to authorize changes"
+                        className="w-full rounded-lg border border-input bg-background pl-9 pr-10 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        tabIndex={-1}
+                        title={showCurrentPassword ? "Hide password" : "Show password"}
+                      >
+                        {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      For your protection, enter your existing password before updates are committed.
+                    </p>
+                  </div>
+
+                  {/* Action Toolbar */}
+                  <div className="pt-4 border-t flex items-center justify-end">
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={savingCredentials}
+                      className="gap-2 px-5"
+                    >
+                      {savingCredentials ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" /> Updating Credentials...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" /> Update Admin Credentials
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* ---------------- RECORD CONTRIBUTION MODAL ---------------- */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl border bg-card p-5 sm:p-6 shadow-2xl animate-rise max-h-[92vh] overflow-y-auto">
+            <h2 className="text-xl font-semibold text-foreground">Record Confirmed Contribution</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              This will add a new entry to the public record on the /progress page.
+            </p>
+
+            <form onSubmit={handleAddContribution} className="mt-5 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground">Donor Name / Label *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. SZABIST Alumni or Anonymous"
+                  value={donorLabel}
+                  onChange={(e) => setDonorLabel(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">Amount (PKR) *</label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  placeholder="e.g. 25000"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">Purpose / Category</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Essential learning supplies, School meals, etc."
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">Date Received</label>
+                <input
+                  type="date"
+                  required
+                  value={receivedOn}
+                  onChange={(e) => setReceivedOn(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+                />
+              </div>
+
+              {/* Optional Payment Screenshot Upload */}
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Attach Payment Proof / Receipt <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <div className="mt-1">
+                  {!manualReceiptPreview ? (
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-input bg-muted/20 p-3 text-xs text-muted-foreground hover:bg-muted/40 transition">
+                      <UploadCloud className="h-4 w-4 text-primary" /> Click to attach receipt image (Cloudinary CDN)
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => setManualReceiptPreview(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-2.5">
+                      <img
+                        src={manualReceiptPreview}
+                        alt="Receipt preview"
+                        className="h-10 w-10 rounded object-cover border"
+                      />
+                      <span className="text-xs text-muted-foreground flex-1">Receipt ready for upload</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setManualReceiptPreview(null)}
+                        className="h-7 text-xs text-destructive hover:bg-destructive/10"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setManualReceiptPreview(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={manualReceiptUploading}>
+                  {manualReceiptUploading ? "Uploading to CDN…" : "Add to Public Ledger"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- PAYMENT RECEIPT LIGHTBOX MODAL ---------------- */}
+      {viewReceiptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-xs animate-rise">
+          <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-2xl border bg-card p-4 sm:p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif text-lg font-bold text-foreground">
+                    Payment Verification Receipt
+                  </h3>
+                  <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                    CDN Asset
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Donor: <span className="font-semibold text-foreground">{viewReceiptModal.donor}</span>
+                  {viewReceiptModal.amount && ` • Amount: ${formatRs(viewReceiptModal.amount)}`}
+                  {viewReceiptModal.date &&
+                    ` • Date: ${new Date(viewReceiptModal.date).toLocaleDateString("en-PK")}`}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewReceiptModal(null)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-auto py-5 text-center">
+              <img
+                src={viewReceiptModal.url}
+                alt="Receipt screenshot"
+                className="mx-auto max-h-[60vh] rounded-lg border object-contain shadow-md bg-black/5"
+              />
+            </div>
+
+            <div className="flex items-center justify-between border-t pt-4">
+              <a
+                href={viewReceiptModal.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> Open full original in new tab
+              </a>
+              <Button size="sm" onClick={() => setViewReceiptModal(null)}>
+                Close Preview
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- GENERAL CONFIRMATION & ALERT MODAL ---------------- */}
+      <ConfirmationModal
+        open={confirmModal.open}
+        onOpenChange={(open) => setConfirmModal((prev) => ({ ...prev, open }))}
+        title={confirmModal.title}
+        description={confirmModal.description}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        variant={confirmModal.variant}
+        icon={confirmModal.icon}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+      />
+    </div>
+  );
+}

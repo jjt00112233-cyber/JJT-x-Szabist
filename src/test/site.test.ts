@@ -1,0 +1,26 @@
+import { describe, expect, it } from "vitest";
+import { SUGGESTED_CONTRIBUTIONS, SITE, gmailComposeUrl } from "@/lib/site";
+
+describe("Suggested contributions", () => {
+  it("starts suggestions at Rs 20,000 with none below that amount", () => {
+    expect(SUGGESTED_CONTRIBUTIONS[0].amount).toBe(20000);
+    expect(Math.min(...SUGGESTED_CONTRIBUTIONS.map((item) => item.amount))).toBe(20000);
+  });
+  it("increases each subsequent suggested contribution", () => {
+    const amounts = SUGGESTED_CONTRIBUTIONS.map((item) => item.amount);
+    amounts.slice(1).forEach((amount, index) => {
+      const previous = amounts[index];
+      if (previous === undefined) throw new Error("Missing preceding contribution amount");
+      expect(amount).toBeGreaterThan(previous);
+    });
+  });
+});
+
+describe("Contact email", () => {
+  it("opens Gmail compose addressed to the community contact", () => {
+    const url = new URL(gmailComposeUrl());
+    expect(url.origin).toBe("https://mail.google.com");
+    expect(url.searchParams.get("view")).toBe("cm");
+    expect(url.searchParams.get("to")).toBe(SITE.contactEmail);
+  });
+});
