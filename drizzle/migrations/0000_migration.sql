@@ -4,7 +4,7 @@ CREATE TABLE public.donation_requests (
   organization text CHECK (char_length(organization) <= 160),
   email text NOT NULL CHECK (char_length(email) BETWEEN 3 AND 255),
   phone text CHECK (char_length(phone) <= 40),
-  donor_type text NOT NULL DEFAULT 'individual' CHECK (donor_type IN ('individual','foundation','company')),
+  donor_type text NOT NULL DEFAULT 'individual' CHECK (donor_type IN ('individual','foundation','company','contact')),
   intended_amount numeric CHECK (intended_amount IS NULL OR intended_amount >= 0),
   message text CHECK (char_length(message) <= 1000),
   created_at timestamptz NOT NULL DEFAULT now()
